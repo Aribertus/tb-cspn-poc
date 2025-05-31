@@ -25,3 +25,23 @@ The prototype models semantic coordination among modular agents via threshold-ba
 git clone https://github.com/remo-pareschi/tb-cspn-poc.git
 cd tb-cspn-poc
 pip install -r requirements.txt  # if using any external libraries
+
+---
+
+## 🧩 Formal Petri Net Model (SNAKES-based)
+
+In addition to the agent-based simulation (`main.py`), the repository includes a **Petri Net formalization** of the TB-CSPN logic using the [SNAKES library](https://snakes.ibisc.univ-evry.fr/).
+
+📄 File: `tb_cspn_snakes.py`
+
+### 🔍 What it does
+
+- Models the core flow shown in **Figure 3** of the paper (Consultant → Supervisor → Worker).
+- Defines places and transitions explicitly using Petri Net primitives.
+- Demonstrates token propagation, threshold filtering, and agent-equivalent logic.
+- Can be used for formal analysis, visualization, or validation.
+
+### 🧪 Run the Petri Net Model
+
+```bash
+python tb_cspn_snakes.py
