@@ -111,3 +111,62 @@ MIT License.
 
 ---
 © 2025 — TB-CSPN Research Team
+
+🧩 Coloured Petri Net Engine (cpn_engine/)
+This module offers an alternative implementation of the TB-CSPN framework based on Coloured Petri Nets (CPNs). It closely follows formal CPN semantics, allowing fine-grained control of token routing and evaluation based on topic relevance and guards.
+
+🧠 Design Highlights
+Typed Places: Each place accepts tokens of a single topic (color), ensuring semantic coherence.
+
+Relevance-Driven Firing: Transitions only fire if incoming tokens satisfy topic-specific relevance thresholds.
+
+Token Evaluation: Transitions apply aggregation logic on token contents using customizable evaluation functions.
+
+Guarded Places: Guards enforce topic-specific checks (e.g., "gains ≥ 800").
+
+🔧 Example Test (See petriNetTest.py)
+python
+Copia
+Modifica
+from cpn_engine.computeToken import ComputeToken
+from cpn_engine.guard import Guard
+from cpn_engine.place import Place
+from cpn_engine.petriNet import PetriNet
+from cpn_engine.petriToken import Token
+from cpn_engine.topic import Topic
+from cpn_engine.transition import Transition
+Test execution:
+
+bash
+Copia
+Modifica
+python petriNetTest.py
+Expected output:
+
+css
+Copia
+Modifica
+[TEST] Executing Petri Net Transition...
+
+[RESULT] Final decision: topic = decision, value = buy
+
+### 🔄 Comparison with LO Engine
+
+| **Feature**             | **LO Engine**                                       | **CPN Engine**                                      |
+|-------------------------|-----------------------------------------------------|-----------------------------------------------------|
+| **Formal Basis**        | Linear Objects (Multiplicative Fragment)            | Coloured Petri Nets                                 |
+| **Guard Logic**         | Declarative rule-based                              | Guarded Places and Transition Thresholds            |
+| **Token Model**         | Topic-weight dictionaries                           | Typed token with strict color enforcement           |
+| **Execution Semantics** | Rule unification and firing                         | Classical CPN firing and net evolution              |
+| **Modularity**          | High (rules added independently)                    | High (places and transitions as objects)            |
+| **verifiability**          | High (LO–CPN equivalence)                        | High (via PN theory)                 |
+
+
+🛠️ Future Directions
+Add support for token multisets and resource consumption semantics
+
+Enable tracing and visualization of Petri net execution
+
+Integrate external agents (e.g., LLMs, market simulators) to feed tokens dynamically
+
+Add a CPN → Snakes translation for interoperability
