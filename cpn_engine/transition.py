@@ -100,8 +100,22 @@ class Transition:
         # else:
             
         #     return False
+        
+        
+    def prepareRepresentationPre(self, preDict):
+        
+            representationPre = str([('Topic: '+ pl.getTopic().getName(), 'value: ' +  str(preDict[pl].getValue())) for pl in preDict])
             
+            return f'Transition {self.getName()} firing with tokens: ' + representationPre
+
     
+    def prepareRepresentationPost(self, postDict):  
+
+                 representationPost = str([('Topic: '+ pl.getTopic().getName(), 'value: ' +  str(pl.getContent().getValue())) for pl in postDict])
+                 
+                 return f'Transition {self.getName()} producing tokens: ' + representationPost
+
+        
     def fire(self):
         
         if self.isFireable():
@@ -112,12 +126,16 @@ class Transition:
                                 
                 places.update({placePre : placePre.getContent()})
                 placePre.empty()
+                                
+            print(self.prepareRepresentationPre(places))
                 
             postConds = self.getPostConditions()
                         
             for placePost in postConds:
                                                 
                 placePost.insert(postConds.get(placePost).execute(places))
-                
+                                        
+            print(self.prepareRepresentationPost(postConds))
+
         return True
             
