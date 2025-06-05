@@ -6,6 +6,9 @@ Created on Wed May 28 18:23:18 2025
 
 """
 
+from transition import Transition
+from place import Place
+
 class PetriNet:
     
     def __init__(self):
@@ -14,12 +17,12 @@ class PetriNet:
         self._places = []
         
     
-    def addTrans(self, trans):
+    def addTrans(self, trans : Transition):
         
         self._transitions.append(trans)
         
         
-    def addPlace(self, place):
+    def addPlace(self, place : Place):
         
         self._places.append(place)
         
@@ -53,5 +56,7 @@ class PetriNet:
         while flag:
             
             flag = flag and self.fireNet()
+        
+        return flag
             
             

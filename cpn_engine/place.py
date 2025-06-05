@@ -5,14 +5,16 @@ Created on Wed May 28 12:01:03 2025
 @author: botto
 """
 
-
+from petriToken import Token
+from topic import Topic
+from guard import Guard
 
 class Place:
         
     nextPlace = 0
     
     
-    def __init__(self, name, topic, guard):
+    def __init__(self, name : str, topic: Topic, guard : Guard):
         
         self._name = name
         self._topic = topic
@@ -49,12 +51,12 @@ class Place:
         return self._guard
     
     
-    def checkPresence(self, token):
+    def checkPresence(self, token : Token):
         
         return token == self.getContent()
     
         
-    def insert(self, token):       
+    def insert(self, token : Token):       
         self._pool = token
         
         

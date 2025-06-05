@@ -104,18 +104,29 @@ class Transition:
         
     def prepareRepresentationPre(self, preDict):
         
-            representationPre = str([('Topic: '+ pl.getTopic().getName(), 'value: ' +  str(preDict[pl].getValue())) for pl in preDict])
+            representationPre = ['Topic: ' + pl.getTopic().getName() + ' with value: ' +  str(preDict[pl].getValue()) + ' from Place: ' + pl.getName() + '\n' for pl in preDict]
             
-            return f'Transition {self.getName()} firing with tokens: ' + representationPre
+            return representationPre
 
     
     def prepareRepresentationPost(self, postDict):  
-
-                 representationPost = str([('Topic: '+ pl.getTopic().getName(), 'value: ' +  str(pl.getContent().getValue())) for pl in postDict])
-                 
-                 return f'Transition {self.getName()} producing tokens: ' + representationPost
-
         
+        representationPost = []
+
+        representationPost = ['Topic: ' + pl.getTopic().getName() + ' with value: ' + str(pl.getContent().getValue()) + ' in Place: ' + pl.getName() + '\n' for pl in postDict]
+                 
+        return representationPost
+
+
+    def printRepresentation(self, header, representation):
+        
+        print (header)
+            
+        for info in representation:
+            
+            print(info)
+            
+
     def fire(self):
         
         if self.isFireable():
@@ -127,7 +138,8 @@ class Transition:
                 places.update({placePre : placePre.getContent()})
                 placePre.empty()
                                 
-            print(self.prepareRepresentationPre(places))
+            self.printRepresentation(f'Transition {self.getName()} firing with tokens: \n', self.prepareRepresentationPre(places))
+           
                 
             postConds = self.getPostConditions()
                         
@@ -135,7 +147,7 @@ class Transition:
                                                 
                 placePost.insert(postConds.get(placePost).execute(places))
                                         
-            print(self.prepareRepresentationPost(postConds))
+            self.printRepresentation(f'Transition {self.getName()} has produced tokens: \n', self.prepareRepresentationPost(postConds))
 
         return True
             
