@@ -161,6 +161,26 @@ Modifica
 | **Modularity**          | High (rules added independently)                    | High (places and transitions as objects)            |
 | **verifiability**          | High (LO–CPN equivalence)                        | High (via PN theory)                 |
 
+## 🧠 Petri Net Semantics & Formal Properties
+
+The CPN implementation currently adopts **interleaving semantics**, where at most one transition fires at each step. This simplifies implementation and supports deterministic testing. It can be extended to support:
+
+- **Inhibitory arcs** for complex coordination constraints (e.g., mutual exclusion).
+- **Fair firing** policies or priorities, if needed.
+
+### Structural Assumptions & Implications
+
+If the network adheres to the following:
+- Transitions have **disjoint post-condition places** ("no contacts").
+- The net has a **layered V-model** structure (no cycles, only upward/downward flows).
+
+Then we obtain useful theoretical guarantees:
+- **Monotonic enabling**: enabled transitions stay enabled.
+- **Eventual firing**: all transitions will fire, given their conditions hold.
+- **Acyclic safety**: each transition fires at most once per workflow.
+
+These constraints make the model highly suited to organizational process modeling, where predictable progression and bounded execution are essential.
+
 
 🛠️ Future Directions
 Add support for token multisets and resource consumption semantics
