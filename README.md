@@ -1,192 +1,274 @@
 
-# TB-CSPN PoC: Financial Scenario
+# TB-CSPN: Topic-Based Communication Space Petri Net Framework
 
-This repository contains a lightweight Proof of Concept (PoC) implementation of the **TB-CSPN (Topic-Based Communication-Space Petri Net)** framework, focused on the financial portfolio optimization scenario described in our forthcoming paper.
+This repository contains the reference implementation of the **TB-CSPN (Topic-Based Communication-Space Petri Net)** framework, a formal architecture for coordinating multi-agent systems through topic-based communication and Petri net semantics.
 
-The prototype models semantic coordination among modular agents via threshold-based token propagation across communication layers (`observation`, `surface`, `computation`).
+## Overview
 
-## 🧠 Core Components
+TB-CSPN demonstrates key principles for next-generation agentic AI by providing a dedicated multi-agent coordination substrate that separates semantic understanding from process orchestration. The framework models semantic coordination among modular agents via threshold-based token propagation across three communication layers: **Surface** (strategic), **Observation** (semantic), and **Computation** (operational).
 
-- **Consultant Agent**: Parses incoming news items and produces semantically enriched tokens with topic distributions.
-- **Supervisor Agent**: Evaluates topic activation thresholds and decides whether to issue a directive.
-- **Worker Agent**: Executes portfolio reallocation actions based on valid directives (currently mocked).
+## Key Features
 
-## 🛠️ Features
+- **Formal Coordination**: Colored Petri Net semantics ensure verifiable agent behavior
+- **Topic-Based Communication**: Semantic interlingua enables heterogeneous agent coordination  
+- **Human-AI Collaboration**: Native support for centaurian architectures and human oversight
+- **Efficient LLM Integration**: Strategic LLM usage restricted to semantic understanding tasks
+- **Multi-Engine Architecture**: Rule-based, CPN, and SNAKES engines for different deployment needs
 
-- Python-based, modular design
-- Token metadata tracking (`id`, `layer`)
-- Semantic threshold logic
-- Transparent trace logging
-- Easily extendable to plug in real LLMs or optimization logic (e.g., G-learning)
+## Architecture Components
 
-## 📦 Installation
+### Core Agent Types
+- **Consultant Agents**: LLM-powered semantic processors that transform unstructured input into topic-annotated tokens
+- **Supervisor Agents**: Human decision-makers (optionally AI-augmented) who apply strategic rules and issue directives  
+- **Worker Agents**: Specialized AI systems that execute domain-specific actions based on supervisor directives
 
-```bash
-git clone https://github.com/remo-pareschi/tb-cspn-poc.git
-cd tb-cspn-poc
-pip install -r requirements.txt  # if using any external libraries
+### Multi-Engine Implementation
+- **Rule Engine**: Declarative rule-based coordination emphasizing modular composition
+- **CPN Engine**: Formal Colored Petri Net semantics with typed places and guarded transitions
+- **SNAKES Engine**: Integration with established Petri net libraries for analysis and verification
 
----
+## Empirical Validation
 
-## 🧩 Formal Petri Net Model (SNAKES-based)
+The `evaluation/` directory contains comprehensive benchmarks comparing TB-CSPN with LangGraph-style prompt chaining. Our validated results demonstrate significant architectural advantages:
 
-In addition to the agent-based simulation (`main.py`), the repository includes a **Petri Net formalization** of the TB-CSPN logic using the [SNAKES library](https://snakes.ibisc.univ-evry.fr/).
+### Key Results (Validated)
+- **62.5% faster processing** than LangGraph pipelines
+- **66.7% fewer LLM API calls** through architectural efficiency
+- **Equal reliability** while maintaining semantic fidelity
+- **166.8% higher throughput** for production deployments
 
-📄 File: `tb_cspn_snakes.py`
-
-### 🔍 What it does
-
-- Models the core flow shown in **Figure 3** of the paper (Consultant → Supervisor → Worker).
-- Defines places and transitions explicitly using Petri Net primitives.
-- Demonstrates token propagation, threshold filtering, and agent-equivalent logic.
-- Can be used for formal analysis, visualization, or validation.
-
-### 🧪 Run the Petri Net Model
+### Quick Reproduction
 
 ```bash
-python tb_cspn_snakes.py
-# TB-CSPN PoC: Logical Rules Prototype (LO-inspired)
+# Install dependencies
+pip install -r evaluation/requirements.txt
 
-This repository hosts an experimental prototype for modeling the **TB-CSPN (Topic-Based Communication-Space Petri Net)** logic layer using **Linear Logic-style rules**, inspired by the **LO (Linear Objects)** formalism. This version focuses on **rule-based semantic coordination** and **relevance-driven agent execution**, illustrating how a logical substrate could govern multi-agent decision processes.
+# Run validated comparison (no API key needed)
+python evaluation/fair_comparison.py
+```
 
-## 🧠 Overview
-- **Tokens** represent semantically tagged news events or observations, annotated with topic weights.
-- **Consultant** generates tokens from inputs, simulating a topic extractor (e.g., LLM or topic model).
-- **Supervisor** applies a pool of declarative rules (guards) to decide whether action should be triggered.
-- **Worker** agents execute domain-specific actions (e.g., financial optimization) when directives are fired.
+**Published results based on**: `fair_comparison.py` with simulated LLM timing calibrated to realistic API latency.
 
-## ⚙️ Features
-- Declarative rule registration via decorators (simulating LO-style rules).
-- Parameterized guard instantiation (simulating contextual unification).
-- Extendable rule base without rewriting existing logic.
-- Traceable token lifecycle.
-- Modular architecture for integration with LLM APIs or optimization libraries (e.g., G-learning).
+### Advanced Usage
 
-## 🧪 Example Rules
+```bash
+# Extended comparison with real OpenAI integration (requires API key)
+python evaluation/enhanced_fair_comparison.py
+```
+
+**Note**: Real LLM integration requires OpenAI API key and incurs usage costs (~$0.50-2.00 for complete evaluation). Results may show different absolute timing due to network variability but preserve architectural efficiency ratios.
+
+See `evaluation/README.md` for complete methodology, limitations, and extension guidelines.
+
+## Repository Structure
+
+```
+tb-cspn-poc/
+├── README.md                          # This file
+├── core/                              # Core TB-CSPN framework
+│   ├── token.py                       # Token data structures
+│   └── agents/                        # Agent implementations
+├── lo_engine/                         # Rule-based coordination engine
+│   ├── token.py                       # Token definitions
+│   ├── rules.py                       # Declarative rule system
+│   └── lo_main.py                     # Main execution script
+├── cpn_engine/                        # Colored Petri Net engine
+│   ├── petriNet.py                    # CPN implementation
+│   ├── place.py, transition.py        # Basic CPN components
+│   └── petriNetTest.py                # CPN test example
+├── snakes_engine/                     # SNAKES library integration
+│   └── tb_cspn_snakes.py              # Petri net formalization
+├── examples/                          # Example applications
+│   └── financial_news/
+│       └── consultant_1.py            # LLM-based financial consultant
+├── evaluation/                        # Comparative evaluation framework
+│   ├── README.md                      # Detailed methodology
+│   ├── fair_comparison.py             # Validated benchmark (main results)
+│   ├── enhanced_fair_comparison.py    # Real LLM integration option
+│   └── results/                       # Generated benchmark results
+└── docs/                              # Documentation
+```
+
+## Quick Start
+
+### Basic Token Processing (Rule Engine)
+
 ```python
+# Rule-based coordination example
+from lo_engine.token import Token
+from lo_engine.rules import rule
+
+# Define a rule
 @rule
 def high_ai_relevance_guard(token):
     if token.topics.get("AI_stocks", 0) >= 0.8:
         return {"directive": ("AI_stocks", 1.0)}
     return None
+
+# Process a token
+token = Token(topics={"AI_stocks": 0.9}, content="AI breakthrough announced")
+# Rule engine processes and fires appropriate directives
 ```
 
-## 🧩 LO Equivalence and Design Considerations
-This implementation corresponds to the **multiplicative fragment** of LO, and by equivalence, to **Colored Petri Nets (CPNs)** — where topics act as colors. The advantage of using LO-style rules lies in their **locality**: each rule can be added independently, avoiding global rewrites. This aligns with modular and distributed agent architectures.
+### CPN Engine Example
 
-## 🔄 Future Directions
+```python
+# Colored Petri Net coordination
+from cpn_engine.petriNet import PetriNet
+from cpn_engine.place import Place
+from cpn_engine.transition import Transition
 
-### Additive Conjunction (`&`) and Forking Semantics
-The prototype currently focuses on linear resource consumption (`A ⊗ B`) but omits additive branching. Future versions may include the **additive conjunction operator** `&`, allowing controlled forking of environments. This would enable:
-- Multi-scenario evaluation
-- Divergent agent perspectives
-- Hypothetical planning and simulation
+# Create places and transitions
+input_place = Place("input", capacity=10)
+output_place = Place("output", capacity=10)
+processing_transition = Transition("process", [input_place], [output_place])
 
-### Worker Agents as Action Interfaces
-While workers currently respond to directives using mock actions, future versions can instantiate **parameterized software components**, including:
-- Portfolio optimizers (e.g., G-learning agent)
-- LLM-assisted financial analysts
-- External APIs for execution
+# Execute Petri net workflow
+net = PetriNet([input_place, output_place], [processing_transition])
+# Run formal analysis and verification
+```
 
-### Data Context and Token Pool
-The rule system operates over a pool of contextually available resources. These can be fed by:
-- Financial data sources (Bloomberg, Reuters)
-- Sentiment analyzers
-- Semantic news aggregators
-- Topic volume trend monitors
+### Financial News Processing
 
-## 📂 Files
-- `lo_main.py`: Main execution script for rule-driven token processing.
-- `lo_engine/token.py`: Token dataclass definition.
-- `lo_engine/rules.py`: Declarative guard definitions.
-- `README.md`: You are here.
+```python
+# LLM-based financial analysis (examples/financial_news/)
+from examples.financial_news.consultant_1 import generate_topic_from_csv
 
-## 📚 Related Work
-- Jean-Marc Andreoli, Remo Pareschi. "Linear Objects: Logical Processes with Built-in Inheritance." *New Generation Computing*, 9(3/4):445–474, 1991. [DOI: 10.1007/BF03037173](https://doi.org/10.1007/BF03037173)
-- Kurt Jensen. *Coloured Petri Nets – Basic Concepts, Analysis Methods and Practical Use, Volume 1*. Springer, 1992. [DOI: 10.1007/978-3-662-06289-0](https://doi.org/10.1007/978-3-662-06289-0)
-- [SNAKES: Petri Net Library in Python](https://snakes.ibisc.univ-evry.fr)
+# Process financial news with LLM topic extraction
+tokens = generate_topic_from_csv("financial_news.csv")
+# Returns semantically annotated tokens with topic distributions
+```
 
-## 📜 License
-MIT License.
+## Architecture Principles
+
+TB-CSPN demonstrates key design principles for efficient agentic AI:
+
+1. **Separation of Concerns**: LLMs for semantic understanding, formal methods for coordination
+2. **Dedicated Multi-Agent Environment**: Purpose-built coordination substrate vs. LLM-mediated orchestration
+3. **Human Strategic Control**: Humans at supervisor layer, AI at consultant/worker layers
+4. **Formal Verification**: Petri net semantics enable mathematical guarantees
+5. **Efficiency Through Architecture**: 2-3x performance gains through proper design
+
+## Formal Properties and Verification
+
+### Rule Engine (LO-Inspired)
+The rule-based engine implements coordination through declarative rules inspired by Linear Objects formalism. Rules can be added independently without global rewrites, supporting modular agent architectures. This approach corresponds to the multiplicative fragment of Linear Logic and maintains equivalence with Colored Petri Nets.
+
+### CPN Engine Guarantees
+The Colored Petri Net implementation provides formal semantics with verifiable properties:
+
+- **Typed Places**: Each place accepts tokens of specific semantic types
+- **Guarded Transitions**: Threshold-based firing with relevance aggregation  
+- **Structural Properties**: For layered V-model networks, guarantees include:
+  - Monotonic enabling (enabled transitions stay enabled)
+  - Eventual firing (all transitions fire when conditions hold)
+  - Acyclic safety (each transition fires at most once per workflow)
+
+### SNAKES Integration
+The SNAKES-based implementation enables classical Petri net analysis including reachability analysis, deadlock detection, and liveness verification.
+
+## Academic Papers
+
+This implementation supports the following publications:
+
+1. **"Agentic AI: Debunking the Myth and Building the Concept"** (Future Internet, 2025) - Main theoretical framework and empirical validation
+2. **"TB-CSPN Framework"** ([Springer](https://link.springer.com/content/pdf/10.1007/s10791-025-09667-2.pdf)) - Formal foundations and multi-agent coordination
+3. **"Centaurian Architectures"** ([Frontiers](https://www.frontiersin.org/journals/human-dynamics/articles/10.3389/fhumd.2025.1579166/full)) - Human-AI collaboration models
+
+## Installation and Dependencies
+
+```bash
+git clone https://github.com/Aribertus/tb-cspn-poc.git
+cd tb-cspn-poc
+
+# Core dependencies
+pip install snakes  # for Petri net analysis
+pip install openai  # for LLM integration (examples)
+
+# Evaluation dependencies  
+pip install -r evaluation/requirements.txt
+```
+
+## Running Examples
+
+### Test CPN Engine
+```bash
+python cpn_engine/petriNetTest.py
+```
+Expected output:
+```
+[TEST] Executing Petri Net Transition...
+[RESULT] Final decision: topic = decision, value = buy
+```
+
+### Test Rule Engine
+```bash
+python lo_engine/lo_main.py
+```
+
+### Test SNAKES Formalization
+```bash
+python snakes_engine/tb_cspn_snakes.py
+```
+
+### Run Comparative Evaluation
+```bash
+cd evaluation
+python fair_comparison.py
+```
+
+## Future Directions
+
+### Enhanced Formal Analysis
+- Token multisets and resource consumption semantics
+- Tracing and visualization of Petri net execution
+- Inhibitory arcs for complex coordination constraints
+
+### Extended Integration
+- Integration with external agents (LLMs, market simulators)
+- Real-time data feeds and streaming processing
+- Enterprise knowledge base integration
+
+### Advanced Coordination
+- Additive conjunction (`&`) for controlled environment forking
+- Multi-scenario evaluation and divergent agent perspectives
+- Hypothetical planning and simulation capabilities
+
+## Contributing
+
+We welcome contributions! Areas of particular interest:
+
+- Additional benchmark frameworks (AutoGen, CrewAI, etc.)
+- Domain-specific applications beyond financial news
+- Enhanced visualization and debugging tools
+- Performance optimizations and scalability improvements
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Citation
+
+If you use this work, please cite our foundational paper:
+
+```bibtex
+@article{borghoff2025organizational,
+  title={An organizational theory for multi-agent interactions integrating human agents, LLMs, and specialized AI},
+  author={Borghoff, Uwe M. and Bottoni, Paolo and Pareschi, Remo},
+  journal={Discovering Computing},
+  volume={28},
+  pages={138},
+  year={2025},
+  doi={10.1007/s10791-025-09667-2},
+  url={https://doi.org/10.1007/s10791-025-09667-2}
+}
+```
+
+## Contact
+
+- Remo Pareschi: remo.pareschi@unimol.it
+- Project Issues: [GitHub Issues](https://github.com/Aribertus/tb-cspn-poc/issues)
 
 ---
+
 © 2025 — TB-CSPN Research Team
-
-🧩 Coloured Petri Net Engine (cpn_engine/)
-This module offers an alternative implementation of the TB-CSPN framework based on Coloured Petri Nets (CPNs). It closely follows formal CPN semantics, allowing fine-grained control of token routing and evaluation based on topic relevance and guards.
-
-🧠 Design Highlights
-Typed Places: Each place accepts tokens of a single topic (color), ensuring semantic coherence.
-
-Relevance-Driven Firing: Transitions only fire if incoming tokens satisfy topic-specific relevance thresholds.
-
-Token Evaluation: Transitions apply aggregation logic on token contents using customizable evaluation functions.
-
-Guarded Places: Guards enforce topic-specific checks (e.g., "gains ≥ 800").
-
-🔧 Example Test (See petriNetTest.py)
-python
-Copia
-Modifica
-from cpn_engine.computeToken import ComputeToken
-from cpn_engine.guard import Guard
-from cpn_engine.place import Place
-from cpn_engine.petriNet import PetriNet
-from cpn_engine.petriToken import Token
-from cpn_engine.topic import Topic
-from cpn_engine.transition import Transition
-Test execution:
-
-bash
-Copia
-Modifica
-python petriNetTest.py
-Expected output:
-
-css
-Copia
-Modifica
-[TEST] Executing Petri Net Transition...
-
-[RESULT] Final decision: topic = decision, value = buy
-
-### 🔄 Comparison with LO Engine
-
-| **Feature**             | **LO Engine**                                       | **CPN Engine**                                      |
-|-------------------------|-----------------------------------------------------|-----------------------------------------------------|
-| **Formal Basis**        | Linear Objects (Multiplicative Fragment)            | Coloured Petri Nets                                 |
-| **Guard Logic**         | Declarative rule-based                              | Guarded Places and Transition Thresholds            |
-| **Token Model**         | Topic-weight dictionaries                           | Typed token with strict color enforcement           |
-| **Execution Semantics** | Rule unification and firing                         | Classical CPN firing and net evolution              |
-| **Modularity**          | High (rules added independently)                    | High (places and transitions as objects)            |
-| **verifiability**          | High (LO–CPN equivalence)                        | High (via PN theory)                 |
-
-## 🧠 Petri Net Semantics & Formal Properties
-
-The CPN implementation currently adopts **interleaving semantics**, where at most one transition fires at each step. This simplifies implementation and supports deterministic testing. It can be extended to support:
-
-- **Inhibitory arcs** for complex coordination constraints (e.g., mutual exclusion).
-- **Fair firing** policies or priorities, if needed.
-
-### Structural Assumptions & Implications
-
-If the network adheres to the following:
-- Transitions have **disjoint post-condition places** ("no contacts").
-- The net has a **layered V-model** structure (no cycles, only upward/downward flows).
-
-Then we obtain useful theoretical guarantees:
-- **Monotonic enabling**: enabled transitions stay enabled.
-- **Eventual firing**: all transitions will fire, given their conditions hold.
-- **Acyclic safety**: each transition fires at most once per workflow.
-
-These constraints make the model highly suited to organizational process modeling, where predictable progression and bounded execution are essential.
-
-
-🛠️ Future Directions
-Add support for token multisets and resource consumption semantics
-
-Enable tracing and visualization of Petri net execution
-
-Integrate external agents (e.g., LLMs, market simulators) to feed tokens dynamically
-
-Add a CPN → Snakes translation for interoperability
