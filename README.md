@@ -173,7 +173,7 @@ This implementation supports the following publications:
 
 1. **"Beyond Prompt Chaining: The TB-CSPN Architecture for Agentic AI"** (Future Internet, 2025) - Main theoretical framework and empirical validation
 2. **"TB-CSPN Framework"** ([Springer](https://link.springer.com/content/pdf/10.1007/s10791-025-09667-2.pdf)) - Formal foundations and multi-agent coordination
-3. **"Centaurian Architectures"** ([Frontiers](https://www.frontiersin.org/journals/human-dynamics/articles/10.3389/fhumd.2025.1579166/full)) - Human-AI collaboration models
+3. **"Centaurian Multiagent Architectures"** ([Frontiers](https://www.frontiersin.org/journals/human-dynamics/articles/10.3389/fhumd.2025.1579166/full)) - Human-AI collaboration models
 
 ## Installation and Dependencies
 
