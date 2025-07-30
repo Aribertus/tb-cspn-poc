@@ -252,15 +252,12 @@ MIT License - see LICENSE file for details.
 If you use this work, please cite our foundational paper:
 
 ```bibtex
-@article{borghoff2025organizational,
-  title={An organizational theory for multi-agent interactions integrating human agents, LLMs, and specialized AI},
-  author={Borghoff, Uwe M. and Bottoni, Paolo and Pareschi, Remo},
-  journal={Discovering Computing},
-  volume={28},
-  pages={138},
+@article{TB-CSPN2025,
+  title={Beyond Prompt Chaining: The TB-CSPN Architecture for Agentic AI},
+  author={Borghoff, Uwe and Bottoni, Paolo and Pareschi, Remo},
+  journal={Future Internet (Special Issue on Agentic AI)},
   year={2025},
-  doi={10.1007/s10791-025-09667-2},
-  url={https://doi.org/10.1007/s10791-025-09667-2}
+  note={Under review}
 }
 ```
 
