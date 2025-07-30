@@ -1,0 +1,781 @@
+{
+  "config": {
+    "agent_count": 25,
+    "task_complexity": "medium",
+    "concurrency_level": 6,
+    "coordination_pattern": "hierarchical",
+    "task_batch_size": 50
+  },
+  "metrics": {
+    "total_execution_time": 18.022721767425537,
+    "coordination_overhead": 0.0,
+    "memory_usage_peak": 20.94921875,
+    "cpu_utilization_avg": 4.266666666666667,
+    "task_success_rate": 0.9
+  },
+  "raw_data": {
+    "resource_snapshots": [
+      {
+        "timestamp": 1753613948.6876779,
+        "cpu_percent": 0.0,
+        "memory_mb": 20.91796875,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613949.6879923,
+        "cpu_percent": 6.5,
+        "memory_mb": 20.9296875,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613950.6888053,
+        "cpu_percent": 3.1,
+        "memory_mb": 20.93359375,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613951.690193,
+        "cpu_percent": 2.3,
+        "memory_mb": 20.93359375,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613952.6913507,
+        "cpu_percent": 10.1,
+        "memory_mb": 20.9375,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613953.69262,
+        "cpu_percent": 11.4,
+        "memory_mb": 20.9375,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613954.6987746,
+        "cpu_percent": 4.5,
+        "memory_mb": 20.9375,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613955.6996813,
+        "cpu_percent": 2.8,
+        "memory_mb": 20.9375,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613956.7004054,
+        "cpu_percent": 3.1,
+        "memory_mb": 20.9375,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613957.7012918,
+        "cpu_percent": 3.2,
+        "memory_mb": 20.94140625,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613958.702284,
+        "cpu_percent": 4.3,
+        "memory_mb": 20.94140625,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613959.7033136,
+        "cpu_percent": 5.1,
+        "memory_mb": 20.94140625,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613960.7038708,
+        "cpu_percent": 4.8,
+        "memory_mb": 20.9453125,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613961.7047763,
+        "cpu_percent": 3.4,
+        "memory_mb": 20.9453125,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613962.7054195,
+        "cpu_percent": 3.1,
+        "memory_mb": 20.9453125,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613963.706284,
+        "cpu_percent": 2.3,
+        "memory_mb": 20.94921875,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613964.7071424,
+        "cpu_percent": 2.5,
+        "memory_mb": 20.94921875,
+        "thread_count": 2
+      },
+      {
+        "timestamp": 1753613965.7079785,
+        "cpu_percent": 4.3,
+        "memory_mb": 20.94921875,
+        "thread_count": 2
+      }
+    ],
+    "coordination_events": [],
+    "task_events": [
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0029_932bead1",
+        "timestamp": 1753613948.6882641,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0029_932bead1",
+        "timestamp": 1753613949.0897167,
+        "success": true,
+        "duration": 0.4014432430267334
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0027_40e0b61a",
+        "timestamp": 1753613949.0897775,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0027_40e0b61a",
+        "timestamp": 1753613949.4689274,
+        "success": true,
+        "duration": 0.3791472911834717
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0046_a3adf0f7",
+        "timestamp": 1753613949.468965,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0046_a3adf0f7",
+        "timestamp": 1753613950.6440609,
+        "success": false,
+        "duration": 1.1750924587249756
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0028_127d04c6",
+        "timestamp": 1753613950.6441088,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0028_127d04c6",
+        "timestamp": 1753613950.9211237,
+        "success": true,
+        "duration": 0.2770121097564697
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0002_fd7d3cc9",
+        "timestamp": 1753613950.921168,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0002_fd7d3cc9",
+        "timestamp": 1753613951.0328307,
+        "success": true,
+        "duration": 0.11166000366210938
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0011_9f442685",
+        "timestamp": 1753613951.0328681,
+        "agent_count": 3
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0011_9f442685",
+        "timestamp": 1753613951.1350117,
+        "success": true,
+        "duration": 0.10214114189147949
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0019_47aa7de8",
+        "timestamp": 1753613951.1350453,
+        "agent_count": 2
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0019_47aa7de8",
+        "timestamp": 1753613951.2328453,
+        "success": true,
+        "duration": 0.09779858589172363
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0000_12fa353b",
+        "timestamp": 1753613951.2328691,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0000_12fa353b",
+        "timestamp": 1753613951.3363688,
+        "success": true,
+        "duration": 0.10349678993225098
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0007_46bdabbc",
+        "timestamp": 1753613951.3364022,
+        "agent_count": 3
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0007_46bdabbc",
+        "timestamp": 1753613951.4396493,
+        "success": true,
+        "duration": 0.10324406623840332
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0034_181be949",
+        "timestamp": 1753613951.4396892,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0034_181be949",
+        "timestamp": 1753613951.7908878,
+        "success": true,
+        "duration": 0.3511953353881836
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0012_8ff61fee",
+        "timestamp": 1753613951.7916074,
+        "agent_count": 3
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0012_8ff61fee",
+        "timestamp": 1753613951.8873398,
+        "success": true,
+        "duration": 0.09573054313659668
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0010_ae01a0a8",
+        "timestamp": 1753613951.8873692,
+        "agent_count": 2
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0010_ae01a0a8",
+        "timestamp": 1753613951.9856203,
+        "success": true,
+        "duration": 0.09824919700622559
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0035_27830c9e",
+        "timestamp": 1753613951.9856477,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0035_27830c9e",
+        "timestamp": 1753613952.3670757,
+        "success": true,
+        "duration": 0.3814265727996826
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0005_8ff674d1",
+        "timestamp": 1753613952.3671026,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0005_8ff674d1",
+        "timestamp": 1753613952.462704,
+        "success": true,
+        "duration": 0.09559822082519531
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0013_24c4131f",
+        "timestamp": 1753613952.4627326,
+        "agent_count": 2
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0013_24c4131f",
+        "timestamp": 1753613952.5769913,
+        "success": true,
+        "duration": 0.11425638198852539
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0042_3606e665",
+        "timestamp": 1753613952.5770285,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0042_3606e665",
+        "timestamp": 1753613953.3899024,
+        "success": true,
+        "duration": 0.8128714561462402
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0008_4964d4ee",
+        "timestamp": 1753613953.3899305,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0008_4964d4ee",
+        "timestamp": 1753613953.501744,
+        "success": true,
+        "duration": 0.11181068420410156
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0040_dbda4c8b",
+        "timestamp": 1753613953.5017726,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0040_dbda4c8b",
+        "timestamp": 1753613954.4296124,
+        "success": true,
+        "duration": 0.9278364181518555
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0036_6eff2179",
+        "timestamp": 1753613954.4296558,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0036_6eff2179",
+        "timestamp": 1753613954.746072,
+        "success": true,
+        "duration": 0.31641387939453125
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0016_560bf2d2",
+        "timestamp": 1753613954.7461102,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0016_560bf2d2",
+        "timestamp": 1753613954.8688474,
+        "success": true,
+        "duration": 0.12273550033569336
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0018_e9eae9cf",
+        "timestamp": 1753613954.8695424,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0018_e9eae9cf",
+        "timestamp": 1753613954.9551308,
+        "success": true,
+        "duration": 0.0855872631072998
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0001_d0e998bd",
+        "timestamp": 1753613954.9551713,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0001_d0e998bd",
+        "timestamp": 1753613955.0537665,
+        "success": true,
+        "duration": 0.09859395027160645
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0038_594eabc9",
+        "timestamp": 1753613955.0538747,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0038_594eabc9",
+        "timestamp": 1753613955.4451697,
+        "success": true,
+        "duration": 0.3912935256958008
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0026_1f85a0d6",
+        "timestamp": 1753613955.445211,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0026_1f85a0d6",
+        "timestamp": 1753613955.7733622,
+        "success": true,
+        "duration": 0.32814860343933105
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0023_25f5b95f",
+        "timestamp": 1753613955.773403,
+        "agent_count": 2
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0023_25f5b95f",
+        "timestamp": 1753613955.888928,
+        "success": true,
+        "duration": 0.1155233383178711
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0006_84220781",
+        "timestamp": 1753613955.888958,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0006_84220781",
+        "timestamp": 1753613955.9861631,
+        "success": true,
+        "duration": 0.09720396995544434
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0021_54523fc7",
+        "timestamp": 1753613955.9861858,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0021_54523fc7",
+        "timestamp": 1753613956.08504,
+        "success": true,
+        "duration": 0.09885144233703613
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0003_2b8a323b",
+        "timestamp": 1753613956.0850718,
+        "agent_count": 3
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0003_2b8a323b",
+        "timestamp": 1753613956.2098434,
+        "success": true,
+        "duration": 0.1247704029083252
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0043_5a0b46b6",
+        "timestamp": 1753613956.209869,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0043_5a0b46b6",
+        "timestamp": 1753613957.005674,
+        "success": false,
+        "duration": 0.7958018779754639
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0022_0f317682",
+        "timestamp": 1753613957.0057154,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0022_0f317682",
+        "timestamp": 1753613957.1119013,
+        "success": false,
+        "duration": 0.10618472099304199
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0014_5123b3b0",
+        "timestamp": 1753613957.1123838,
+        "agent_count": 3
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0014_5123b3b0",
+        "timestamp": 1753613957.1999476,
+        "success": true,
+        "duration": 0.08756375312805176
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0041_3b6c91d1",
+        "timestamp": 1753613957.1999645,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0041_3b6c91d1",
+        "timestamp": 1753613958.0895033,
+        "success": false,
+        "duration": 0.8895423412322998
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0047_755d6ff6",
+        "timestamp": 1753613958.089526,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0047_755d6ff6",
+        "timestamp": 1753613958.8966365,
+        "success": true,
+        "duration": 0.8071086406707764
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0025_b6520dd8",
+        "timestamp": 1753613958.8966618,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0025_b6520dd8",
+        "timestamp": 1753613959.2577503,
+        "success": true,
+        "duration": 0.361086368560791
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0020_de8eec67",
+        "timestamp": 1753613959.2577782,
+        "agent_count": 3
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0020_de8eec67",
+        "timestamp": 1753613959.3564584,
+        "success": true,
+        "duration": 0.0986781120300293
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0017_f4a1e1b4",
+        "timestamp": 1753613959.3564932,
+        "agent_count": 2
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0017_f4a1e1b4",
+        "timestamp": 1753613959.476896,
+        "success": true,
+        "duration": 0.12039804458618164
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0048_94981b93",
+        "timestamp": 1753613959.4769433,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0048_94981b93",
+        "timestamp": 1753613960.5254798,
+        "success": true,
+        "duration": 1.0485353469848633
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0015_d47199fd",
+        "timestamp": 1753613960.5255086,
+        "agent_count": 3
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0015_d47199fd",
+        "timestamp": 1753613960.6519544,
+        "success": true,
+        "duration": 0.12644386291503906
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0024_274e78da",
+        "timestamp": 1753613960.651993,
+        "agent_count": 3
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0024_274e78da",
+        "timestamp": 1753613960.7517788,
+        "success": true,
+        "duration": 0.09978389739990234
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0030_cf35846b",
+        "timestamp": 1753613960.751809,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0030_cf35846b",
+        "timestamp": 1753613961.1119215,
+        "success": true,
+        "duration": 0.360109806060791
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0009_69041e3b",
+        "timestamp": 1753613961.112572,
+        "agent_count": 2
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0009_69041e3b",
+        "timestamp": 1753613961.2269945,
+        "success": true,
+        "duration": 0.11442089080810547
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0045_9f6bce86",
+        "timestamp": 1753613961.2270365,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0045_9f6bce86",
+        "timestamp": 1753613962.1586397,
+        "success": true,
+        "duration": 0.9316017627716064
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "simple_0004_4b41b56f",
+        "timestamp": 1753613962.158667,
+        "agent_count": 1
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "simple_0004_4b41b56f",
+        "timestamp": 1753613962.261162,
+        "success": true,
+        "duration": 0.1024940013885498
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0044_dd5486a8",
+        "timestamp": 1753613962.2611868,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0044_dd5486a8",
+        "timestamp": 1753613963.0940099,
+        "success": true,
+        "duration": 0.8328182697296143
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0032_c11c0231",
+        "timestamp": 1753613963.0940554,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0032_c11c0231",
+        "timestamp": 1753613963.4609146,
+        "success": true,
+        "duration": 0.3668558597564697
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0039_1991c0e7",
+        "timestamp": 1753613963.46096,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0039_1991c0e7",
+        "timestamp": 1753613963.8268216,
+        "success": true,
+        "duration": 0.3658618927001953
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "complex_0049_5fa37420",
+        "timestamp": 1753613963.8268456,
+        "agent_count": 12
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "complex_0049_5fa37420",
+        "timestamp": 1753613964.9595652,
+        "success": true,
+        "duration": 1.132716178894043
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0031_432a1ae3",
+        "timestamp": 1753613964.9596055,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0031_432a1ae3",
+        "timestamp": 1753613965.3300421,
+        "success": false,
+        "duration": 0.3704342842102051
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0037_5dd6f046",
+        "timestamp": 1753613965.3300824,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0037_5dd6f046",
+        "timestamp": 1753613965.6424732,
+        "success": true,
+        "duration": 0.31238770484924316
+      },
+      {
+        "event_type": "task_start",
+        "task_id": "medium_0033_ac96367b",
+        "timestamp": 1753613965.6425161,
+        "agent_count": 6
+      },
+      {
+        "event_type": "task_completion",
+        "task_id": "medium_0033_ac96367b",
+        "timestamp": 1753613966.0237215,
+        "success": true,
+        "duration": 0.38120388984680176
+      }
+    ]
+  }
+}
