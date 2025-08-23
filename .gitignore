@@ -172,3 +172,30 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# --- TB-CSPN POC: eval & local artifacts ---
+# Logs / observability
+runs/
+*.jsonl
+
+# Reports / plots produced by evaluation scripts
+*.csv
+*.png
+*.html
+
+# Local data & configs
+data/
+configs/**/*.local.*
+configs/**/secret*.*
+
+# Local bundles
+tb-cspn-observe-*.zip
+tb-cspn-observe-0.*/
+
+# (Optional) ignore scratch 'python' dir if it's not source code
+# /python/
+
+# Keep empty dirs if you want them in the tree:
+!runs/.gitkeep
+!data/.gitkeep
+
