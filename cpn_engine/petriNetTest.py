@@ -7,13 +7,13 @@ Created on Sat May 31 17:45:37 2025
 PetriNet text
 """
 
-from computeToken import ComputeToken
-from guard import Guard
-from place import Place
-from petriNet import PetriNet
-from petriToken import Token
-from topic import Topic
-from transition import Transition
+from .computeToken import ComputeToken
+from .guard import Guard
+from .place import Place
+from .petriNet import PetriNet
+from .petriToken import Token
+from .topic import Topic
+from .transition import Transition
 
 def goodGains(token : Token):
         

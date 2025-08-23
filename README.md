@@ -1,270 +1,183 @@
+# TB-CSPN Comparative Evaluation
 
-# TB-CSPN: Topic-Based Communication Space Petri Net Framework
-
-This repository contains the reference implementation of the **TB-CSPN (Topic-Based Communication-Space Petri Net)** framework, a formal architecture for coordinating multi-agent systems through topic-based communication and Petri net semantics.
+This directory contains the complete methodology and implementation for comparing TB-CSPN with LangGraph-style prompt chaining architectures.
 
 ## Overview
 
-TB-CSPN demonstrates key principles for next-generation agentic AI by providing a dedicated multi-agent coordination substrate that separates semantic understanding from process orchestration. The framework models semantic coordination among modular agents via threshold-based token propagation across three communication layers: **Surface** (strategic), **Observation** (semantic), and **Computation** (operational).
+Our evaluation demonstrates TB-CSPN's architectural advantages through fair comparison where both systems use LLMs appropriately:
+- **TB-CSPN**: Single LLM call for topic extraction + deterministic rule coordination
+- **LangGraph**: Multiple LLM calls throughout the pipeline (consultant → supervisor → worker)
 
-## Key Features
+## Key Results
 
-- **Formal Coordination**: Colored Petri Net semantics ensure verifiable agent behavior
-- **Topic-Based Communication**: Semantic interlingua enables heterogeneous agent coordination  
-- **Human-AI Collaboration**: Native support for centaurian architectures and human oversight
-- **Efficient LLM Integration**: Strategic LLM usage restricted to semantic understanding tasks
-- **Multi-Engine Architecture**: Rule-based, CPN, and SNAKES engines for different deployment needs
+Based on our fair comparison evaluation:
 
-## Architecture Components
+| Metric | TB-CSPN | LangGraph | Improvement |
+|--------|---------|-----------|-------------|
+| Avg. Processing Time | 0.301s | 0.802s | **62.5% faster** |
+| Peak Throughput | 199.5 items/min | 74.8 items/min | **166.8% higher** |
+| LLM Calls per Item | 1.0 | 3.0 | **66.7% fewer** |
+| Success Rate | 100.0% | 100.0% | Equal reliability |
 
-### Core Agent Types
-- **Consultant Agents**: LLM-powered semantic processors that transform unstructured input into topic-annotated tokens
-- **Supervisor Agents**: Human decision-makers (optionally AI-augmented) who apply strategic rules and issue directives  
-- **Worker Agents**: Specialized AI systems that execute domain-specific actions based on supervisor directives
+## Files Structure
 
-### Multi-Engine Implementation
-- **Rule Engine**: Declarative rule-based coordination emphasizing modular composition
-- **CPN Engine**: Formal Colored Petri Net semantics with typed places and guarded transitions
-- **SNAKES Engine**: Integration with established Petri net libraries for analysis and verification
+```
+evaluation/
+├── README.md                      # This file
+├── requirements.txt               # Python dependencies
+├── tbcspn_poc.py                 # TB-CSPN implementation for benchmarking
+├── langgraph_poc.py              # LangGraph baseline implementation
+├── fair_comparison.py            # Main comparison script (VALIDATED RESULTS)
+├── enhanced_fair_comparison.py   # Extended version with real LLM support
+├── comparative_evaluation.py     # Original comprehensive benchmark
+└── results/                      # Generated results from our evaluation
+    ├── benchmark_analysis.json
+    └── benchmark_report.txt
+```
 
-## Empirical Validation
+## Validated Implementation: fair_comparison.py
 
-The `evaluation/` directory contains comprehensive benchmarks comparing TB-CSPN with LangGraph-style prompt chaining. Our validated results demonstrate significant architectural advantages:
+**This is the script that generated our published results.** It provides a controlled, fair comparison using:
 
-### Key Results (Validated)
-- **62.5% faster processing** than LangGraph pipelines
-- **66.7% fewer LLM API calls** through architectural efficiency
-- **Equal reliability** while maintaining semantic fidelity
-- **166.8% higher throughput** for production deployments
+- **Simulated LLM timing**: Realistic API latency (0.3-0.4s per call) without actual API costs
+- **Deterministic topic extraction**: Consistent results for reproducible benchmarks  
+- **Architectural isolation**: Compares coordination efficiency, not LLM variability
 
-### Quick Reproduction
+### Running the Validated Comparison
 
 ```bash
 # Install dependencies
-pip install -r evaluation/requirements.txt
+pip install pandas numpy matplotlib seaborn psutil
 
-# Run validated comparison (no API key needed)
-python evaluation/fair_comparison.py
-```
-
-**Published results based on**: `fair_comparison.py` with simulated LLM timing calibrated to realistic API latency.
-
-### Advanced Usage
-
-```bash
-# Extended comparison with real OpenAI integration (requires API key)
-python evaluation/enhanced_fair_comparison.py
-```
-
-**Note**: Real LLM integration requires OpenAI API key and incurs usage costs (~$0.50-2.00 for complete evaluation). Results may show different absolute timing due to network variability but preserve architectural efficiency ratios.
-
-See `evaluation/README.md` for complete methodology, limitations, and extension guidelines.
-
-## Repository Structure
-
-```
-tb-cspn-poc/
-├── README.md                          # This file
-├── core/                              # Core TB-CSPN framework
-│   ├── token.py                       # Token data structures
-│   └── agents/                        # Agent implementations
-├── lo_engine/                         # Rule-based coordination engine
-│   ├── token.py                       # Token definitions
-│   ├── rules.py                       # Declarative rule system
-│   └── lo_main.py                     # Main execution script
-├── cpn_engine/                        # Colored Petri Net engine
-│   ├── petriNet.py                    # CPN implementation
-│   ├── place.py, transition.py        # Basic CPN components
-│   └── petriNetTest.py                # CPN test example
-├── snakes_engine/                     # SNAKES library integration
-│   └── tb_cspn_snakes.py              # Petri net formalization
-├── examples/                          # Example applications
-│   └── financial_news/
-│       └── consultant_1.py            # LLM-based financial consultant
-├── evaluation/                        # Comparative evaluation framework
-│   ├── README.md                      # Detailed methodology
-│   ├── fair_comparison.py             # Validated benchmark (main results)
-│   ├── enhanced_fair_comparison.py    # Real LLM integration option
-│   └── results/                       # Generated benchmark results
-└── docs/                              # Documentation
-```
-
-## Quick Start
-
-### Basic Token Processing (Rule Engine)
-
-```python
-# Rule-based coordination example
-from lo_engine.token import Token
-from lo_engine.rules import rule
-
-# Define a rule
-@rule
-def high_ai_relevance_guard(token):
-    if token.topics.get("AI_stocks", 0) >= 0.8:
-        return {"directive": ("AI_stocks", 1.0)}
-    return None
-
-# Process a token
-token = Token(topics={"AI_stocks": 0.9}, content="AI breakthrough announced")
-# Rule engine processes and fires appropriate directives
-```
-
-### CPN Engine Example
-
-```python
-# Colored Petri Net coordination
-from cpn_engine.petriNet import PetriNet
-from cpn_engine.place import Place
-from cpn_engine.transition import Transition
-
-# Create places and transitions
-input_place = Place("input", capacity=10)
-output_place = Place("output", capacity=10)
-processing_transition = Transition("process", [input_place], [output_place])
-
-# Execute Petri net workflow
-net = PetriNet([input_place, output_place], [processing_transition])
-# Run formal analysis and verification
-```
-
-### Financial News Processing
-
-```python
-# LLM-based financial analysis (examples/financial_news/)
-from examples.financial_news.consultant_1 import generate_topic_from_csv
-
-# Process financial news with LLM topic extraction
-tokens = generate_topic_from_csv("financial_news.csv")
-# Returns semantically annotated tokens with topic distributions
-```
-
-## Architecture Principles
-
-TB-CSPN demonstrates key design principles for efficient agentic AI:
-
-1. **Separation of Concerns**: LLMs for semantic understanding, formal methods for coordination
-2. **Dedicated Multi-Agent Environment**: Purpose-built coordination substrate vs. LLM-mediated orchestration
-3. **Human Strategic Control**: Humans at supervisor layer, AI at consultant/worker layers
-4. **Formal Verification**: Petri net semantics enable mathematical guarantees
-5. **Efficiency Through Architecture**: 2-3x performance gains through proper design
-
-## Formal Properties and Verification
-
-### Rule Engine (LO-Inspired)
-The rule-based engine implements coordination through declarative rules inspired by Linear Objects formalism. Rules can be added independently without global rewrites, supporting modular agent architectures. This approach corresponds to the multiplicative fragment of Linear Logic and maintains equivalence with Colored Petri Nets.
-
-### CPN Engine Guarantees
-The Colored Petri Net implementation provides formal semantics with verifiable properties:
-
-- **Typed Places**: Each place accepts tokens of specific semantic types
-- **Guarded Transitions**: Threshold-based firing with relevance aggregation  
-- **Structural Properties**: For layered V-model networks, guarantees include:
-  - Monotonic enabling (enabled transitions stay enabled)
-  - Eventual firing (all transitions fire when conditions hold)
-  - Acyclic safety (each transition fires at most once per workflow)
-
-### SNAKES Integration
-The SNAKES-based implementation enables classical Petri net analysis including reachability analysis, deadlock detection, and liveness verification.
-
-## Academic Papers
-
-This implementation supports the following publications:
-
-1. **"Beyond Prompt Chaining: The TB-CSPN Architecture for Agentic AI"** (Future Internet, 2025) - Main theoretical framework and empirical validation
-2. **"TB-CSPN Framework"** ([Springer](https://link.springer.com/content/pdf/10.1007/s10791-025-09667-2.pdf)) - Formal foundations and multi-agent coordination
-3. **"Centaurian Multiagent Architectures"** ([Frontiers](https://www.frontiersin.org/journals/human-dynamics/articles/10.3389/fhumd.2025.1579166/full)) - Human-AI collaboration models
-
-## Installation and Dependencies
-
-```bash
-git clone https://github.com/Aribertus/tb-cspn-poc.git
-cd tb-cspn-poc
-
-# Core dependencies
-pip install snakes  # for Petri net analysis
-pip install openai  # for LLM integration (examples)
-
-# Evaluation dependencies  
-pip install -r evaluation/requirements.txt
-```
-
-## Running Examples
-
-### Test CPN Engine
-```bash
-python cpn_engine/petriNetTest.py
-```
-Expected output:
-```
-[TEST] Executing Petri Net Transition...
-[RESULT] Final decision: topic = decision, value = buy
-```
-
-### Test Rule Engine
-```bash
-python lo_engine/lo_main.py
-```
-
-### Test SNAKES Formalization
-```bash
-python snakes_engine/tb_cspn_snakes.py
-```
-
-### Run Comparative Evaluation
-```bash
-cd evaluation
+# Run the exact comparison that generated our paper results
 python fair_comparison.py
 ```
 
-## Future Directions
+Expected output:
+```
+Running Fair Comparison: Both Systems Using LLMs
+============================================================
+Average Processing Time:
+  TB-CSPN:   0.301s
+  LangGraph: 0.802s
+  TB-CSPN is 62.5% faster
 
-### Enhanced Formal Analysis
-- Token multisets and resource consumption semantics
-- Tracing and visualization of Petri net execution
-- Inhibitory arcs for complex coordination constraints
+LLM Calls per Item:
+  TB-CSPN:   1.0
+  LangGraph: 3.0
+  TB-CSPN uses 66.7% fewer LLM calls
+...
+```
 
-### Extended Integration
-- Integration with external agents (LLMs, market simulators)
-- Real-time data feeds and streaming processing
-- Enterprise knowledge base integration
+## Extended Implementation: enhanced_fair_comparison.py
 
-### Advanced Coordination
-- Additive conjunction (`&`) for controlled environment forking
-- Multi-scenario evaluation and divergent agent perspectives
-- Hypothetical planning and simulation capabilities
+**This version supports real OpenAI API integration** for users who want to:
+- Test with actual LLM variability
+- Validate results with their own API keys
+- Extend the evaluation to other LLM providers
 
-## Contributing
+### Using Real LLM Integration
 
-We welcome contributions! Areas of particular interest:
+```python
+# Edit enhanced_fair_comparison.py and uncomment:
+tb_results, lg_results = run_comprehensive_fair_comparison(
+    use_real_llm=True, 
+    api_key="your-openai-api-key-here"
+)
+```
 
-- Additional benchmark frameworks (AutoGen, CrewAI, etc.)
-- Domain-specific applications beyond financial news
-- Enhanced visualization and debugging tools
-- Performance optimizations and scalability improvements
+**Note**: Real LLM usage will incur API costs (~$0.50-2.00 for full evaluation) and may show different absolute timing due to network latency, but should preserve the architectural efficiency ratios.
 
-## License
+## Methodology: Why This Comparison is Fair
 
-MIT License - see LICENSE file for details.
+### Problem with Previous Evaluations
+Many "agentic AI" comparisons are unfair because they compare:
+- LLM-based systems vs. non-LLM systems (obviously LLMs are slower)
+- Different semantic capabilities vs. architectural differences
+
+### Our Fair Comparison Approach
+
+**Both systems use LLMs for semantic understanding:**
+- TB-CSPN: LLM for topic extraction (necessary semantic task)
+- LangGraph: LLM for topic extraction + coordination (semantic + architectural tasks)
+
+**Architectural difference isolated:**
+- TB-CSPN: Formal coordination after semantic processing
+- LangGraph: LLM-mediated coordination throughout pipeline
+
+**Result**: The 62.5% efficiency gain demonstrates pure architectural advantage, not semantic capability differences.
+
+## Reproducing Our Results
+
+### Option 1: Exact Replication (Recommended)
+```bash
+python fair_comparison.py
+```
+Uses the same simulated LLM timing that generated our published results.
+
+### Option 2: Real LLM Validation
+```bash
+# Edit enhanced_fair_comparison.py to add your API key
+python enhanced_fair_comparison.py
+```
+May show different absolute times but should preserve efficiency ratios.
+
+### Option 3: Custom Extension
+Modify the test datasets, timing parameters, or evaluation metrics to explore different scenarios.
+
+## Key Insights
+
+### 1. Separation of Concerns
+TB-CSPN's efficiency comes from architectural separation:
+- **Information Acquisition**: LLMs where they excel (semantic understanding)  
+- **Process Coordination**: Formal methods where they excel (deterministic logic)
+
+### 2. Dedicated Multi-Agent Environment
+LangGraph lacks a dedicated multi-agent substrate and uses LLMs for both semantic processing AND coordination management. TB-CSPN provides purpose-built coordination infrastructure.
+
+### 3. Scalability Implications
+At enterprise scale:
+- TB-CSPN: ~287k items/day processing capacity
+- LangGraph: ~108k items/day processing capacity
+
+## Extending the Evaluation
+
+Researchers can extend this evaluation by:
+
+1. **Testing other frameworks**: AutoGen, Agentic RAG, etc.
+2. **Different domains**: Healthcare, legal, technical documentation
+3. **Real LLM providers**: Anthropic Claude, Google Gemini, etc.
+4. **Scaling studies**: Performance under increasing load
+5. **Cost analysis**: Detailed API cost comparisons
+
+## Limitations and Future Work
+
+### Current Limitations
+- Simulated LLM timing (though calibrated to realistic latency)
+- Financial news domain focus
+- Limited test dataset size (30 items for validated results)
+
+### Suggested Extensions
+- Multi-domain evaluation datasets
+- Real-world production load testing  
+- Integration with enterprise knowledge bases
+- Human-in-the-loop evaluation metrics
 
 ## Citation
 
-If you use this work, please cite our foundational paper:
+If you use this evaluation methodology, please cite:
 
 ```bibtex
-@article{TB-CSPN2025,
-  title={Beyond Prompt Chaining: The TB-CSPN Architecture for Agentic AI},
-  author={Borghoff, Uwe and Bottoni, Paolo and Pareschi, Remo},
-  journal={Future Internet (Special Issue on Agentic AI)},
+@article{borghoff2025agentic,
+  title={Agentic AI: Debunking the Myth and Building the Concept},
+  author={Borghoff, Uwe M. and Bottoni, Paolo and Pareschi, Remo},
+  journal={Future Internet},
   year={2025}
 }
 ```
 
 ## Contact
 
+For questions about the evaluation methodology:
 - Remo Pareschi: remo.pareschi@unimol.it
-- Project Issues: [GitHub Issues](https://github.com/Aribertus/tb-cspn-poc/issues)
-
----
-
-© 2025 — TB-CSPN Research Team
+- GitHub Issues: [tb-cspn-poc/issues](https://github.com/Aribertus/tb-cspn-poc/issues)

@@ -5,9 +5,9 @@ Created on Wed May 28 12:01:03 2025
 @author: botto
 """
 
-from petriToken import Token
-from topic import Topic
-from guard import Guard
+from .petriToken import Token
+from .topic import Topic
+from .guard import Guard
 
 class Place:
         
