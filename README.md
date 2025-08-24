@@ -157,11 +157,35 @@ Researchers can extend this evaluation by:
 - Financial news domain focus
 - Limited test dataset size (30 items for validated results)
 
-### Suggested Extensions
+### Future Extensions
 - Multi-domain evaluation datasets
 - Real-world production load testing  
 - Integration with enterprise knowledge bases
 - Human-in-the-loop evaluation metrics
+
+## Quickstart (Evaluation)
+
+### Prerequisites
+- Python 3.10–3.12
+- Git
+- (Optional) `OPENAI_API_KEY` in your environment if you run live LLM calls
+
+### Setup
+- Windows (CMD)
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+
+- macOS
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+- Linux
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
 
 ## Citation
 
@@ -181,3 +205,4 @@ If you use this evaluation methodology, please cite:
 For questions about the evaluation methodology:
 - Remo Pareschi: remo.pareschi@unimol.it
 - GitHub Issues: [tb-cspn-poc/issues](https://github.com/Aribertus/tb-cspn-poc/issues)
+
