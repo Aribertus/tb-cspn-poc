@@ -256,8 +256,7 @@ If you use this work, please cite our foundational paper:
   title={Beyond Prompt Chaining: The TB-CSPN Architecture for Agentic AI},
   author={Borghoff, Uwe and Bottoni, Paolo and Pareschi, Remo},
   journal={Future Internet (Special Issue on Agentic AI)},
-  year={2025},
-  note={Under review}
+  year={2025}
 }
 ```
 
