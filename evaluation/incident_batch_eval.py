@@ -1,268 +1,85 @@
-# evaluation/incident_batch_eval.py
-# Batch-compare TB-CSPN vs LangGraph on synthetic incident patterns.
-# Writes runs/incident_batch_results.csv and prints a short summary.
-
+# -*- coding: utf-8 -*-
+"""
+Batch-compare TB-CSPN vs LangGraph incident baselines.
+Writes runs/incident_batch_results.csv and prints summary.
+"""
 from __future__ import annotations
-import importlib.util
-import json
-import time
+
 import csv
-import re
+import time
+from typing import Dict, Any, Tuple, Callable, List
 from pathlib import Path
-from typing import Any, Dict, List
+import importlib
 
-HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent
-RUNS = ROOT / "runs"
-RUNS.mkdir(exist_ok=True)
+Path("runs").mkdir(exist_ok=True)
 
-def load_module_by_path(mod_name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(mod_name, str(path))
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot load module {mod_name} from {path}")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+def _load_callable(modname: str) -> Tuple[str, Callable[[Dict[str, Any]], Dict[str, Any]]]:
+    mod = importlib.import_module(f"evaluation.{modname}")
+    if hasattr(mod, "process_incident"):
+        return ("function", getattr(mod, "process_incident"))
+    raise RuntimeError(f"{modname} must expose process_incident(incident: dict) -> dict")
 
-# Load the two baseline scripts directly by file path to avoid PYTHONPATH issues.
-LG = load_module_by_path("lg_incident_baseline", HERE / "lg_incident_baseline.py")
-TB = load_module_by_path("tb_incident_baseline", HERE / "tb_incident_baseline.py")
-
-# --- Call adapters ------------------------------------------------------------
-
-def _find_callable(mod):
-    """
-    Try common entry points that return a dict when passed an 'incident' dict.
-    Falls back to Processor.* if present. Raises if nothing reasonable is found.
-    """
-    # 1) Preference: module-level function taking an incident dict.
-    candidates = ["process_incident", "run_incident", "process", "run"]
-    for name in candidates:
-        if hasattr(mod, name):
-            fn = getattr(mod, name)
-            if callable(fn):
-                return ("function", fn)
-
-    # 2) Look for a *Processor class with a process_incident method.
-    for attr in dir(mod):
-        if "Processor" in attr:
-            cls = getattr(mod, attr)
-            try:
-                try:
-                    inst = cls(use_real_llm=False)  # prefer cheap mode if supported
-                except TypeError:
-                    inst = cls()
-                if hasattr(inst, "process_incident") and callable(inst.process_incident):
-                    return ("method", inst.process_incident)
-            except Exception:
-                continue
-
-    raise RuntimeError(
-        f"Could not find a callable in {mod.__name__}. "
-        f"Please expose `process_incident(incident: dict) -> dict`."
-    )
-
-CALL_KIND_LG, LG_CALL = _find_callable(LG)
-CALL_KIND_TB, TB_CALL = _find_callable(TB)
-
-# If your callables don't accept an incident param, we’ll detect and wrap.
-def _call_with_incident(callable_obj, incident: Dict[str, Any]) -> Dict[str, Any]:
-    try:
-        return callable_obj(incident)
-    except TypeError:
-        # Try no-arg call (module may use an internal default incident)
-        return callable_obj()
-
-# --- Synthetic batch of incidents --------------------------------------------
-
-INCIDENTS: List[Dict[str, Any]] = [
-    {
-        "title": "CPU spike pods restart",
-        "signals": ["cpu_spike", "kube_pod_restart"],
-        "assets": ["cluster-A"],
-        "timestamp": "2025-08-01T09:15:00Z",
-    },
-    {
-        "title": "DB slow queries & pool exhaustion",
-        "signals": ["db_slow_queries", "db_pool_exhaustion", "p95_latency_up"],
-        "assets": ["db-prod-1"],
-        "timestamp": "2025-08-01T10:40:00Z",
-    },
-    {
-        "title": "Memory leak with OOMKills",
-        "signals": ["rss_rising", "oom_kills", "pod_restarts"],
-        "assets": ["svc-payments"],
-        "timestamp": "2025-08-01T12:05:00Z",
-    },
-    {
-        "title": "Network packet loss & errors",
-        "signals": ["packet_loss", "rx_errors", "tcp_retransmits"],
-        "assets": ["edge-router-3"],
-        "timestamp": "2025-08-01T13:20:00Z",
-    },
-    {
-        "title": "Web 5xx surge",
-        "signals": ["http_5xx_surge", "p99_latency_up", "error_budget_burn"],
-        "assets": ["web-frontend"],
-        "timestamp": "2025-08-01T14:55:00Z",
-    },
-    {
-        "title": "Kafka consumer lag spike",
-        "signals": ["kafka_consumer_lag", "throughput_drop"],
-        "assets": ["streaming-pipeline"],
-        "timestamp": "2025-08-01T15:40:00Z",
-    },
-    {
-        "title": "Disk IO saturation",
-        "signals": ["disk_io_saturation", "queue_depth_up"],
-        "assets": ["storage-1"],
-        "timestamp": "2025-08-01T16:10:00Z",
-    },
-    {
-        "title": "SSL cert nearing expiry",
-        "signals": ["tls_cert_expiry_soon"],
-        "assets": ["api-gateway"],
-        "timestamp": "2025-08-01T18:00:00Z",
-    },
-    {
-        "title": "Auth failures spike",
-        "signals": ["auth_failed_logins_spike", "rate_limit_hits"],
-        "assets": ["auth-service"],
-        "timestamp": "2025-08-01T19:35:00Z",
-    },
-    {
-        "title": "Cloud throttling",
-        "signals": ["cloud_throttling", "quota_exceeded"],
-        "assets": ["batch-workers"],
-        "timestamp": "2025-08-01T20:20:00Z",
-    },
-]
-
-# --- Metrics helpers ----------------------------------------------------------
-
-ESCALATION_KEYWORDS = (
-    "page", "escalate", "notify on-call", "notify oncall", "page service owner"
-)
-HIGH_BANDS = {"HIGH", "CRITICAL"}
-
-def is_escalated(result: Dict[str, Any]) -> bool:
-    # Band-based
-    band = str(result.get("band", "")).upper()
-    if band in HIGH_BANDS:
-        return True
-    # Actions-based
-    actions = result.get("actions", []) or []
-    text = " ".join([a.lower() for a in actions])
-    return any(kw in text for kw in ESCALATION_KEYWORDS)
-
-def get_processing_time(result: Dict[str, Any], measured: float) -> float:
-    # Prefer result-provided processing_time; else measured wall time.
-    rt = result.get("processing_time")
-    try:
-        return float(rt) if rt is not None else measured
-    except Exception:
-        return measured
-
-def get_llm_calls(result: Dict[str, Any], default_calls: int) -> int:
-    val = result.get("llm_calls")
-    try:
-        return int(val) if val is not None else default_calls
-    except Exception:
-        return default_calls
-
-# --- Run batch ----------------------------------------------------------------
-
-def run_one(callable_obj, incident: Dict[str, Any]) -> Dict[str, Any]:
-    t0 = time.time()
-    out = _call_with_incident(callable_obj, incident) or {}
-    dt = time.time() - t0
-    out.setdefault("title", incident.get("title"))
-    out.setdefault("timestamp", incident.get("timestamp"))
-    out["processing_time_measured"] = dt
-    return out
-
-def main():
-    rows = []
-    # Default LLM-call assumptions if the result doesn't report it:
-    DEFAULT_TB_CALLS = 1
-    DEFAULT_LG_CALLS = 3
-
-    for idx, inc in enumerate(INCIDENTS, start=1):
-        # TB-CSPN
-        tb_res = run_one(TB_CALL, inc)
-        tb_pt = get_processing_time(tb_res, tb_res["processing_time_measured"])
-        tb_llm = get_llm_calls(tb_res, DEFAULT_TB_CALLS)
-        tb_row = {
-            "idx": idx,
-            "arch": "TB-CSPN",
-            "llm_calls": tb_llm,
-            "processing_time": round(tb_pt, 3),
-            "severity": tb_res.get("severity", ""),
-            "band": tb_res.get("band", ""),
-            "escalated": is_escalated(tb_res),
-            "directive": tb_res.get("summary", tb_res.get("directive", "")),
-            "action_taken": "; ".join(tb_res.get("actions", []) or []),
-            "topics_extracted": json.dumps(tb_res.get("topics_extracted", {}), ensure_ascii=False),
-            "title": tb_res.get("title", ""),
-        }
-        rows.append(tb_row)
-
-        # LangGraph
-        lg_res = run_one(LG_CALL, inc)
-        lg_pt = get_processing_time(lg_res, lg_res["processing_time_measured"])
-        lg_llm = get_llm_calls(lg_res, DEFAULT_LG_CALLS)
-        lg_row = {
-            "idx": idx,
-            "arch": "LangGraph",
-            "llm_calls": lg_llm,
-            "processing_time": round(lg_pt, 3),
-            "severity": lg_res.get("severity", ""),
-            "band": lg_res.get("band", ""),
-            "escalated": is_escalated(lg_res),
-            "directive": lg_res.get("summary", lg_res.get("directive", "")),
-            "action_taken": "; ".join(lg_res.get("actions", []) or []),
-            "topics_extracted": json.dumps(lg_res.get("topics_extracted", {}), ensure_ascii=False),
-            "title": lg_res.get("title", ""),
-        }
-        rows.append(lg_row)
-
-    # Write CSV
-    out_csv = RUNS / "incident_batch_results.csv"
-    fieldnames = [
-        "idx", "arch", "llm_calls", "processing_time", "severity", "band",
-        "escalated", "directive", "action_taken", "topics_extracted", "title"
+def _synth_incidents() -> List[Dict[str, Any]]:
+    return [
+        {"title": "CPU spike A", "signals": ["cpu_spike"], "assets": ["cluster-A"], "timestamp": "2025-08-01T09:15:00Z"},
+        {"title": "Pod restarts B", "signals": ["kube_pod_restart"], "assets": ["svc-B"], "timestamp": "2025-08-01T10:05:00Z"},
+        {"title": "Disk pressure C", "signals": ["disk_io_surge"], "assets": ["db-C"], "timestamp": "2025-08-01T11:22:00Z"},
+        {"title": "Latency D", "signals": ["net_latency"], "assets": ["edge-D"], "timestamp": "2025-08-01T12:40:00Z"},
+        {"title": "CPU+Restart E", "signals": ["cpu_spike", "kube_pod_restart"], "assets": ["svc-E"], "timestamp": "2025-08-01T13:12:00Z"},
+        {"title": "Quiet F", "signals": [], "assets": ["misc-F"], "timestamp": "2025-08-01T14:09:00Z"},
+        {"title": "CPU+Disk G", "signals": ["cpu_spike", "disk_io_surge"], "assets": ["db-G"], "timestamp": "2025-08-01T15:33:00Z"},
+        {"title": "Restart+Latency H", "signals": ["kube_pod_restart", "net_latency"], "assets": ["svc-H"], "timestamp": "2025-08-01T16:55:00Z"},
+        {"title": "All signals I", "signals": ["cpu_spike", "kube_pod_restart", "disk_io_surge", "net_latency"], "assets": ["cluster-I"], "timestamp": "2025-08-01T18:01:00Z"},
+        {"title": "Generic J", "signals": ["misc"], "assets": ["misc-J"], "timestamp": "2025-08-01T19:45:00Z"},
     ]
+
+def _band_to_escalate(band: str) -> bool:
+    return band.upper() in ("MEDIUM", "HIGH")
+
+def main() -> None:
+    kind_tb, call_tb = _load_callable("tb_incident_baseline")
+    kind_lg, call_lg = _load_callable("lg_incident_baseline")
+    incs = _synth_incidents()
+
+    rows: List[Dict[str, Any]] = []
+    for idx, inc in enumerate(incs, start=1):
+        r_tb = call_tb(inc)
+        r_lg = call_lg(inc)
+        rows.append({
+            "idx": idx, "arch": "TB-CSPN", "llm_calls": r_tb.get("llm_calls", 0),
+            "processing_time": round(r_tb.get("processing_time", 0.0), 3),
+            "severity": r_tb.get("severity"), "band": r_tb.get("band"),
+            "escalate": _band_to_escalate(r_tb.get("band", "")),
+            "directive": r_tb.get("summary", "")[:80],
+        })
+        rows.append({
+            "idx": idx, "arch": "LangGraph", "llm_calls": r_lg.get("llm_calls", 0),
+            "processing_time": round(r_lg.get("processing_time", 0.0), 3),
+            "severity": r_lg.get("severity"), "band": r_lg.get("band"),
+            "escalate": _band_to_escalate(r_lg.get("band", "")),
+            "directive": r_lg.get("summary", "")[:80],
+        })
+
+    out_csv = Path("runs/incident_batch_results.csv")
     with out_csv.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
         w.writerows(rows)
 
-    # Console summary
-    def _stats(arch: str):
+    def _summ(arch: str) -> Dict[str, Any]:
         subset = [r for r in rows if r["arch"] == arch]
         n = len(subset)
-        avg_rt = sum(float(r["processing_time"]) for r in subset) / n if n else 0.0
-        sev_vals = [float(r["severity"]) for r in subset if isinstance(r["severity"], (int, float)) or re.match(r"^\d+(\.\d+)?$", str(r["severity"])) ]
-        avg_sev = (sum(map(float, sev_vals)) / len(sev_vals)) if sev_vals else None
-        esc = sum(1 for r in subset if r["escalated"])
-        esc_rate = esc / n if n else 0.0
-        avg_calls = sum(int(r["llm_calls"]) for r in subset) / n if n else 0.0
-        return {
-            "count": n,
-            "avg_runtime_s": round(avg_rt, 3),
-            "avg_severity": round(avg_sev, 3) if avg_sev is not None else "n/a",
-            "escalation_rate": f"{round(esc_rate*100,1)}%",
-            "avg_llm_calls": round(avg_calls, 2),
-        }
+        avg_t = sum(r["processing_time"] for r in subset) / n if n else 0.0
+        avg_s = sum(r["severity"] for r in subset if r["severity"] is not None) / n if n else 0.0
+        esc = sum(1 for r in subset if r["escalate"]) / n if n else 0.0
+        avg_calls = sum(r["llm_calls"] for r in subset) / n if n else 0.0
+        return {"count": n, "avg_runtime_s": round(avg_t, 3), "avg_severity": round(avg_s, 2),
+                "escalation_rate": f"{esc*100:.1f}%", "avg_llm_calls": round(avg_calls, 2)}
 
-    tb_stats = _stats("TB-CSPN")
-    lg_stats = _stats("LangGraph")
-
-    print("\nWrote", out_csv)
     print("\n--- Summary (10 incidents) ---")
-    print("TB-CSPN  :", tb_stats)
-    print("LangGraph:", lg_stats)
-    print("\nTip: open the CSV in Excel or Pandas to slice by title/band/escalation.")
+    print("TB-CSPN :", _summ("TB-CSPN"))
+    print("LangGraph:", _summ("LangGraph"))
+    print(f"\nCSV written -> {out_csv.resolve()}")
 
 if __name__ == "__main__":
     main()
