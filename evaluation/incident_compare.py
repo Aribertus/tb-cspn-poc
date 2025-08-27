@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 Runs both incident baselines and writes runs/incident_compare.jsonl and .csv
 - Uses lg_incident_baseline (deterministic) and tb_incident_baseline (deterministic).
 - Run with:  python evaluation\incident_compare.py
@@ -45,6 +45,12 @@ def run_lg():
         "action_taken": (res.get("actions", [])[:1] or ["N/A"])[0],
         "topics_extracted": {"signals": ", ".join(res.get("summary","").split("Signals: ")[-1].split(".")[0].split(", "))} if "Signals:" in res.get("summary","") else {},
     }
+
+r"""
+Compare outputs of LG and TB baselines on one incident.
+
+- Run with:  python evaluation\incident_compare.py
+"""
 
 def run_tb():
     out = tb.run_pipeline()
