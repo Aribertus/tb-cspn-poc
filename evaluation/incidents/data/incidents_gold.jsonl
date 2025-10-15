@@ -1,0 +1,13 @@
+{
+  "id": "inc-001",
+  "title": "CPU spike A",
+  "description": "...",
+  "service": "svc-a",
+  "impact": 2,
+  "signals": ["cpu_spike"],
+  "timestamp": "2025-08-01T09:15:00Z",
+
+  "gold_topics": ["availability","incident_management"],
+  "gold_directive": "notify_team_worker",     // or a canonical label
+  "gold_action": "Notify on-call SRE"
+}
