@@ -1,0 +1,52 @@
+{
+  "name": "incident_narrative_pipeline",
+  "places": [
+    {"id": "P_ready", "label": "Ready"},
+    {"id": "P_raw_events", "label": "Raw events"},
+    {"id": "P_merged", "label": "Merged/normalized events"},
+    {"id": "P_context", "label": "Similar incidents (RAG context)"},
+    {"id": "P_summary_draft", "label": "Draft narrative"},
+    {"id": "P_summary_valid", "label": "Validated narrative (JSON)"},
+    {"id": "P_severity", "label": "Severity score"},
+    {"id": "P_actions", "label": "Action plan"},
+    {"id": "P_done", "label": "Done"}
+  ],
+  "transitions": [
+    {"id": "T_collect", "label": "Collect events"},
+    {"id": "T_merge_normalize", "label": "Merge & normalize"},
+    {"id": "T_retrieve_context", "label": "Retrieve similar (RAG)"},
+    {"id": "T_summarize", "label": "Summarize to narrative"},
+    {"id": "T_validate", "label": "Validate schema"},
+    {"id": "T_score_severity", "label": "Score severity"},
+    {"id": "T_generate_actions", "label": "Generate action plan"},
+    {"id": "T_finalize", "label": "Finalize"}
+  ],
+  "arcs": [
+    {"src": "P_ready", "dst": "T_collect"},
+    {"src": "T_collect", "dst": "P_raw_events"},
+
+    {"src": "P_raw_events", "dst": "T_merge_normalize"},
+    {"src": "T_merge_normalize", "dst": "P_merged"},
+
+    {"src": "P_merged", "dst": "T_retrieve_context"},
+    {"src": "T_retrieve_context", "dst": "P_context"},
+
+    {"src": "P_context", "dst": "T_summarize"},
+    {"src": "T_summarize", "dst": "P_summary_draft"},
+
+    {"src": "P_summary_draft", "dst": "T_validate"},
+    {"src": "T_validate", "dst": "P_summary_valid"},
+
+    {"src": "P_summary_valid", "dst": "T_score_severity"},
+    {"src": "T_score_severity", "dst": "P_severity"},
+
+    {"src": "P_severity", "dst": "T_generate_actions"},
+    {"src": "T_generate_actions", "dst": "P_actions"},
+
+    {"src": "P_actions", "dst": "T_finalize"},
+    {"src": "T_finalize", "dst": "P_done"}
+  ],
+  "tokens": {
+    "P_ready": 1
+  }
+}

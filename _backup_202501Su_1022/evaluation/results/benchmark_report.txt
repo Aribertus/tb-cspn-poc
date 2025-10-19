@@ -1,0 +1,46 @@
+================================================================================
+TB-CSPN vs LangGraph Comparative Evaluation Report
+================================================================================
+
+PERFORMANCE COMPARISON
+----------------------------------------
+Processing Time:
+  TB-CSPN:    0.000s (avg)
+  LangGraph:  0.645s (avg)
+  Improvement: 99.9% faster
+
+Throughput:
+  TB-CSPN:    151711.0 items/min
+  LangGraph:  93.0 items/min
+  Improvement: 163019.8% higher throughput
+
+Success Rate:
+  TB-CSPN:    100.0%
+  LangGraph:  90.0%
+
+RESOURCE USAGE
+----------------------------------------
+Memory Usage:
+  TB-CSPN:    0.0 MB (avg delta)
+  LangGraph:  1.2 MB (avg delta)
+  Improvement: 97.8% less memory usage
+
+SEMANTIC QUALITY
+----------------------------------------
+Average Topics Extracted:
+  TB-CSPN:    1.1
+  LangGraph:  0.7
+
+Decision Consistency:
+  TB-CSPN:    99.6%
+  LangGraph:  76.2%
+
+ROBUSTNESS ANALYSIS
+----------------------------------------
+Error Rates:
+  TB-CSPN:    0.0%
+  LangGraph:  10.0%
+
+Performance Stability (Coefficient of Variation):
+  TB-CSPN:    0.956
+  LangGraph:  0.235

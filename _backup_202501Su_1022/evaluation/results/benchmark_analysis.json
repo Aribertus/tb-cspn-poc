@@ -1,0 +1,56 @@
+{
+  "performance": {
+    "tbcspn": {
+      "avg_processing_time": 0.00039548873901367186,
+      "median_processing_time": 0.0003228187561035156,
+      "p95_processing_time": 0.0004859209060668945,
+      "throughput_per_minute": 151711.0200144683,
+      "success_rate": 1.0
+    },
+    "langgraph": {
+      "avg_processing_time": 0.6451202613753712,
+      "median_processing_time": 0.6752064304578046,
+      "p95_processing_time": 0.876037557658469,
+      "throughput_per_minute": 93.00591469888474,
+      "success_rate": 0.9
+    }
+  },
+  "resources": {
+    "tbcspn": {
+      "avg_memory_delta": 0.026302083333333334,
+      "avg_cpu_percent": 0.0
+    },
+    "langgraph": {
+      "avg_memory_delta": 1.186753939259121,
+      "avg_cpu_percent": 23.878323805137956
+    }
+  },
+  "semantic_quality": {
+    "avg_topics_extracted": {
+      "tbcspn": 1.1333333333333333,
+      "langgraph": 0.6666666666666666
+    },
+    "decision_consistency": {
+      "tbcspn": 0.996,
+      "langgraph": 0.762
+    }
+  },
+  "robustness": {
+    "error_analysis": {
+      "tbcspn_error_rate": 0.0,
+      "langgraph_error_rate": 0.1,
+      "tbcspn_error_types": [],
+      "langgraph_error_types": [
+        "Mock LLM timeout",
+        "Mock LLM timeout",
+        "Mock LLM timeout"
+      ]
+    },
+    "stability": {
+      "tbcspn_time_std": 0.00037812007261903683,
+      "langgraph_time_std": 0.14986337320898774,
+      "tbcspn_time_cv": 0.9560830317496484,
+      "langgraph_time_cv": 0.23543563824888264
+    }
+  }
+}
