@@ -1,197 +1,110 @@
-# -*- coding: utf-8 -*-
+# --- Minimal TB finance baseline (deterministic & bench-friendly) ---
+
 from __future__ import annotations
+import json, time
+from typing import Any, Dict, List, Optional
 
-"""
-TB-CSPN finance baseline (deterministic).
-- One typed LLM call (or a simulator when TB_USE_REAL_LLM=false)
-- Topic normalization via finance_taxonomy.normalize_topics
-- Deterministic rules -> directive/action
-"""
-
-import os
-import sys
-import time
-import json
-from typing import Dict, Any
-from pathlib import Path
-
-# ------------------------ robust imports ------------------------
-
-# logger (installed package or local fallback)
 try:
-    from tb_cspn_observe.logger import open_jsonl
-except ModuleNotFoundError:
-    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "fallback"))
-    from tb_cspn_observe.logger import open_jsonl  # type: ignore
+    # Optional: if LangChain & OpenAI are installed, we’ll use them for real calls
+    from langchain_openai import ChatOpenAI
+    from langchain.schema import SystemMessage, HumanMessage
+    LLM_AVAILABLE = True
+except Exception:
+    LLM_AVAILABLE = False
 
-# enhanced_fair_comparison helpers (module or sibling file)
-try:
-    from evaluation.enhanced_fair_comparison import (  # type: ignore
-        with_llm_logging, _create_chat_completion, LLM_MODEL
-    )
-except ModuleNotFoundError:
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-    from enhanced_fair_comparison import (  # type: ignore
-        with_llm_logging, _create_chat_completion, LLM_MODEL
-    )
+# Deterministic-ish defaults to mirror TB style
+TB_MODEL       = "gpt-4o-mini"
+TB_TEMPERATURE = 0.0
+TB_TOP_P       = 1.0
+TB_SEED: Optional[int] = 1234   # set to None to disable seed
 
-# finance taxonomy (module or sibling file)
-try:
-    from evaluation.finance_taxonomy import normalize_topics  # type: ignore
-except ModuleNotFoundError:
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-    from finance_taxonomy import normalize_topics  # type: ignore
+FINANCE_TAXONOMY: List[str] = [
+    "earnings", "mergers_acquisitions", "macroeconomy", "regulation",
+    "markets", "commodities", "technology", "risk", "strategy",
+]
 
-# ------------------------ setup ------------------------
+def _extract_news(item: Any) -> str:
+    """Robustly extract a text payload from various item shapes."""
+    if isinstance(item, dict):
+        for k in ("news", "text", "content"):
+            if item.get(k):
+                return str(item[k])
+        # fallback: concatenate common fields
+        parts = [item.get("headline"), item.get("summary"), item.get("body")]
+        return " ".join([p for p in parts if p]) or json.dumps(item, ensure_ascii=False)
+    return str(item)
 
-Path("runs").mkdir(exist_ok=True)
-try:
-    OBS_LOG  # type: ignore[name-defined]
-except NameError:
-    OBS_LOG = open_jsonl("runs/obs.jsonl")
-
-THREAD_ID = "run-001"
-USE_REAL_LLM = (os.environ.get("TB_USE_REAL_LLM", "true").lower() != "false")
-
-# ------------------------ LLM / Simulator ------------------------
-
-def _extract_topics_llm(content: str) -> Dict[str, float]:
+def process_item_impl(item: Any, thread_id: str | None = None) -> Dict[str, Any]:
     """
-    Return raw topics (possibly unnormalized). When USE_REAL_LLM=false,
-    return a cheap deterministic simulation for speed/repro.
+    Real TB baseline implementation the bench will call.
+    Returns a dict with keys expected by the bench:
+      - topics_extracted: List[str]
+      - raw: Dict (may include usage)
+      - latency_ms: float
+      - llm_calls: int
+      - tokens_total: Optional[int]
     """
-    if not USE_REAL_LLM:
-        # simple simulator
-        topics: Dict[str, float] = {}
-        cl = content.lower()
-        if any(w in cl for w in ["ai", "nvidia", "semiconductor", "chip"]):
-            topics["AI chip demand"] = 0.95
-        if any(w in cl for w in ["fed", "rate", "federal reserve", "policy"]):
-            topics["monetary policy"] = 0.85
-        if "inflation" in cl:
-            topics["inflation trends"] = 0.60
-        if "earnings" in cl or "beats" in cl or "misses" in cl:
-            topics["earnings"] = 0.80
-        return topics or {"general market": 0.60}
+    news = _extract_news(item)
+    start = time.perf_counter()
 
-    system = (
-        "You are a senior financial analyst. Identify the main topics and assign each a score 0–1. "
-        "Respond ONLY with valid JSON as {\"topic_distribution\": {\"topic\": score}}"
-    )
-    messages = [
-        {"role": "system", "content": system},
-        {"role": "user", "content": f"News: {content}"},
-    ]
-    resp = with_llm_logging(
-        node_name=f"TB_{LLM_MODEL}_finance_consultant",
-        messages=messages,
-        model=LLM_MODEL,
-        temperature=0.2,
-        call=lambda: _create_chat_completion(
-            messages, model=LLM_MODEL, temperature=0.2, max_tokens=512
-        ),
-        max_tokens=512,
-    )
-    msg = resp.choices[0].message
-    text = msg["content"] if isinstance(msg, dict) else msg.content
-    text = text.strip().strip("`").strip()
-    data = json.loads(text)
-    return data.get("topic_distribution", {})
+    topics: List[str] = []
+    usage = None
+    tokens_total = None
+    llm_calls = 0
 
-# ------------------------ Deterministic policy ------------------------
+    if LLM_AVAILABLE:
+        # Simple single-shot classification prompt (deterministic)
+        system = SystemMessage(content=(
+            "You are a precise finance topic tagger. "
+            "Given a news item, output a JSON list of 3-6 topics chosen ONLY "
+            f"from this taxonomy: {FINANCE_TAXONOMY}."
+        ))
+        human = HumanMessage(content=f"News:\n{news}\n\nRespond ONLY with a JSON list of strings.")
+        llm = ChatOpenAI(
+            model=TB_MODEL,
+            temperature=TB_TEMPERATURE,
+            top_p=TB_TOP_P, 
+            seed=TB_SEED,
+)       
+        resp = llm.invoke([system, human])
+        llm_calls = 1
+        try:
+            topics = json.loads(resp.content)
+            if not isinstance(topics, list):
+                topics = []
+        except Exception:
+            topics = []
 
-def _apply_rules(topics: Dict[str, float]) -> Dict[str, Any]:
-    """
-    topics are expected to be normalized to canonical keys like:
-      ai_chip_demand, monetary_policy, inflation, earnings, ...
-    """
-    if not topics:
-        return {
-            "directive": "No actionable topics",
-            "action": "NO_ACTION",
-            "confidence": 0.0,
-            "rule_fired": "default_rule",
-        }
+        # Best-effort usage (langchain-openai may or may not expose it here)
+        try:
+            usage = getattr(resp, "response_metadata", {}).get("token_usage")
+            if usage:
+                tokens_total = usage.get("total_tokens")
+        except Exception:
+            usage = None
+    else:
+        # No LLM available: fallback heuristic (quick & deterministic)
+        text = news.lower()
+        if "fed" in text or "inflation" in text or "gdp" in text:
+            topics.append("macroeconomy")
+        if "merger" in text or "acquisition" in text or "deal" in text:
+            topics.append("mergers_acquisitions")
+        if "earnings" in text or "guidance" in text or "q" in text:
+            topics.append("earnings")
+        if "sec" in text or "regulator" in text or "policy" in text:
+            topics.append("regulation")
+        if not topics:
+            topics.append("markets")
 
-    ai = topics.get("ai_chip_demand", 0.0)
-    mon = topics.get("monetary_policy", 0.0)
-    infl = topics.get("inflation", 0.0)
-    earn = topics.get("earnings", 0.0)
-
-    if ai >= 0.80:
-        return {
-            "directive": "Analyze semiconductor positioning",
-            "action": "SECTOR_ANALYSIS",
-            "confidence": ai,
-            "rule_fired": "ai_high",
-        }
-
-    if mon >= 0.70 and infl >= 0.60:
-        return {
-            "directive": "Tighten risk posture",
-            "action": "DEFENSIVE_POSITIONING",
-            "confidence": (mon + infl) / 2.0,
-            "rule_fired": "macro_tighten",
-        }
-
-    if earn >= 0.75:
-        return {
-            "directive": "Review earnings-driven catalysts",
-            "action": "SECTOR_ANALYSIS",
-            "confidence": earn,
-            "rule_fired": "earnings_high",
-        }
-
-    # fallback
-    mx = max(topics.values())
+    latency_ms = (time.perf_counter() - start) * 1000.0
     return {
-        "directive": "Standard monitoring",
-        "action": "STANDARD_MONITORING",
-        "confidence": mx,
-        "rule_fired": "standard",
+        "topics_extracted": topics,
+        "raw": {"usage": usage} if usage else {},
+        "latency_ms": latency_ms,
+        "llm_calls": llm_calls,
+        "tokens_total": tokens_total,
     }
 
-# ------------------------ Public entry point ------------------------
-
-def process_news_item(news: str) -> Dict[str, Any]:
-    t0 = time.time()
-    llm_calls = 0
-    try:
-        raw = _extract_topics_llm(news); llm_calls += 1
-        norm = normalize_topics(raw)
-        decision = _apply_rules(norm)
-        return {
-            "input_text": (news[:100] + "...") if len(news) > 100 else news,
-            "topics_extracted": norm,
-            "directive": decision["directive"],
-            "action_taken": decision["action"],
-            "rule_fired": decision["rule_fired"],
-            "confidence": decision["confidence"],
-            "processing_time": time.time() - t0,
-            "success": True,
-            "llm_calls": llm_calls,
-            "architecture": "TB-CSPN",
-        }
-    except Exception as e:
-        return {
-            "input_text": (news[:100] + "...") if len(news) > 100 else news,
-            "topics_extracted": {},
-            "directive": None,
-            "action_taken": None,
-            "rule_fired": None,
-            "confidence": 0.0,
-            "processing_time": time.time() - t0,
-            "success": False,
-            "error_message": str(e),
-            "llm_calls": llm_calls,
-            "architecture": "TB-CSPN",
-        }
-
-# ------------------------ CLI smoke test ------------------------
-
-if __name__ == "__main__":
-    sample = (
-        "NVIDIA beats on earnings as AI chip demand surges; "
-        "the Fed hints at rate cuts amid cooling inflation."
-    )
-    print(json.dumps(process_news_item(sample), indent=2))
+# Public entry point expected by the bench
+def process_item(item: Any, thread_id: str | None = None) -> Dict[str, Any]:
+    return process_item_impl(item, thread_id=thread_id)

@@ -1,189 +1,281 @@
-# -*- coding: utf-8 -*-
-"""
-LangGraph-ish baseline for finance (with OBS logging).
-Runs as a script or module, with robust imports and LLM logging.
-"""
-
+# evaluation/lg_finance_baseline.py
 from __future__ import annotations
-import os, time, json
-from typing import Dict, Any
-from pathlib import Path
 
-# --- logger import with fallback (works even if package not installed) ---
-try:
-    from tb_cspn_observe.logger import open_jsonl
-except ModuleNotFoundError:
-    import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "fallback"))
-    from tb_cspn_observe.logger import open_jsonl  # type: ignore
+import json
+import os
+import time
+from typing import Any, Dict, List, Optional
 
-# --- helpers import with fallback (module vs script) ---
-try:
-    # when run as a module: python -m evaluation.lg_finance_baseline
-    from evaluation.enhanced_fair_comparison import (
-        with_llm_logging, _create_chat_completion, LLM_MODEL
-    )
-except ModuleNotFoundError:
-    # when run as a script: python evaluation\lg_finance_baseline.py
-    import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-    from enhanced_fair_comparison import (  # type: ignore
-        with_llm_logging, _create_chat_completion, LLM_MODEL
-    )
+# ---- Config (env-driven, with sensible defaults)
+LG_MODEL        = os.environ.get("TB_LG_MODEL", "gpt-4o-mini")
+LG_TEMPERATURE  = float(os.environ.get("TB_LG_TEMPERATURE", "0.2"))
+LG_TOP_P        = float(os.environ.get("TB_LG_TOP_P", "0.95"))
+# Determinism: set TB_LG_SEED to an int (e.g. set TB_LG_SEED=7)
+LG_SEED: Optional[int] = (
+    int(os.environ["TB_LG_SEED"]) if os.environ.get("TB_LG_SEED") else None
+)
+# New knobs:
+LG_MAX_TOKENS   = int(os.environ.get("TB_LG_MAX_TOKENS", "300"))
+LG_TIMEOUT_SEC  = float(os.environ.get("TB_LG_TIMEOUT", "60"))
 
-# --- taxonomy import with fallback (module vs script) ---
-try:
-    import evaluation.finance_taxonomy as ftax  # type: ignore
-except ModuleNotFoundError:
-    import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-    import finance_taxonomy as ftax  # type: ignore
+# Toggle real LLM vs. stub
+USE_REAL_LLM    = os.environ.get("TB_USE_REAL_LLM", "false").lower() == "true"
 
-# ---------------- observability ----------------
-Path("runs").mkdir(exist_ok=True)
-try:
-    OBS_LOG  # type: ignore[name-defined]
-except NameError:
-    OBS_LOG = open_jsonl("runs/obs.jsonl")
-THREAD_ID = "run-finance-lg"
+# Optional: OpenAI key (LangChain will also read from env automatically)
+OPENAI_API_KEY  = os.environ.get("OPENAI_API_KEY", "")
 
-USE_REAL_LLM = (os.environ.get("TB_USE_REAL_LLM", "true").lower() != "false")
+# --------- Optional logging helpers (no-op if package unavailable)
+def _try_log_jsonl(filepath: str, obj: Dict[str, Any]) -> None:
+    try:
+        # prefer tb_cspn_observe.logger if present (any of the APIs we’ve seen)
+        from tb_cspn_observe.logger import log_json, write_json, log_jsonl, open_jsonl  # type: ignore
+        # priority: context manager if available
+        if "log_jsonl" in globals():
+            from pathlib import Path
+            with log_jsonl(Path(filepath)) as f:  # type: ignore
+                write_json(f, obj)               # type: ignore
+            return
+        # or open_jsonl (older helper)
+        if "open_jsonl" in globals():
+            with open_jsonl(filepath) as f:      # type: ignore
+                f.write(json.dumps(obj, ensure_ascii=False) + "\n")
+            return
+        # or direct single-line writer
+        if "log_json" in globals():
+            log_json(filepath, obj)              # type: ignore
+            return
+    except Exception:
+        pass  # best-effort only
 
+
+# --------- Real LLM (LangChain OpenAI chat) or heuristic stubs
+def _chat_json(system: str, user: str) -> Dict[str, Any]:
+    """
+    Single JSON call with explicit params to avoid LC warnings.
+    """
+    from langchain_openai import ChatOpenAI  # lazy import
+
+    kwargs: Dict[str, Any] = {
+        "model": LG_MODEL,
+        "temperature": LG_TEMPERATURE,
+        "top_p": LG_TOP_P,
+        "max_tokens": LG_MAX_TOKENS,
+        "timeout": LG_TIMEOUT_SEC,
+    }
+    if LG_SEED is not None:
+        kwargs["seed"] = LG_SEED
+
+    llm = ChatOpenAI(**kwargs)
+    # response_format requires “json” hint in messages — include it explicitly
+    msgs = [
+        {"role": "system", "content": system},
+        {
+            "role": "user",
+            "content": (
+                "You MUST reply in strict JSON only. "
+                "Return a valid JSON object (no prose). "
+                "The output will be parsed by a machine."
+                f"\n\n{user}"
+            ),
+        },
+    ]
+    resp = llm.invoke(msgs, response_format={"type": "json_object"})
+    txt = resp.content if isinstance(resp.content, str) else json.dumps(resp.content)
+    return json.loads(txt)
+
+
+# ---------- Normalization helpers
+def _normalize_topics(scored: Dict[str, float]) -> Dict[str, float]:
+    # strip/normalize topic keys, clamp scores into [0,1]
+    out: Dict[str, float] = {}
+    for k, v in scored.items():
+        key = (k or "").strip()
+        try:
+            score = float(v)
+        except Exception:
+            score = 0.0
+        score = max(0.0, min(1.0, score))
+        if key:
+            out[key] = score
+    # sort by score desc (optional)
+    return dict(sorted(out.items(), key=lambda kv: kv[1], reverse=True))
+
+
+# ---------- Heuristic (offline) path
+def _consultant_llm_stub(content: str) -> Dict[str, float]:
+    text = content.lower()
+    scored: Dict[str, float] = {}
+    if "nvidia" in text or "ai chip" in text:
+        scored["NVIDIA earnings"] = 0.9
+        scored["AI chip demand"] = 0.85
+    if "fed" in text or "rate cut" in text:
+        scored["Federal Reserve rate cuts"] = 0.8
+    if "inflation" in text:
+        scored["inflation trends"] = 0.75
+    if not scored:
+        scored["market news"] = 0.5
+    return scored
+
+
+def _supervisor_llm_stub(topics: Dict[str, float], content: str) -> str:
+    if "AI chip demand" in topics:
+        return "Monitor AI/semiconductors sector; assess earnings sensitivity."
+    if "Federal Reserve rate cuts" in topics:
+        return "Review duration risk and rate-sensitive exposures."
+    return "Summarize key risks and opportunities."
+
+
+def _worker_llm_stub(directive: str) -> str:
+    if "Monitor AI" in directive:
+        return "SECTOR_ANALYSIS"
+    if "duration risk" in directive:
+        return "DURATION_REVIEW"
+    return "NOTE"
+
+
+# ---------- Real LLM path
 def _consultant_llm(content: str) -> Dict[str, float]:
-    """Extract 2–3 finance topics with scores (0–1)."""
     if not USE_REAL_LLM:
-        cl = content.lower()
-        topics: Dict[str, float] = {}
-        if any(w in cl for w in ("ai", "nvidia", "semiconductor")):
-            topics["AI chip demand"] = 0.90
-        if any(w in cl for w in ("fed", "rate", "monetary")):
-            topics["monetary policy"] = 0.80
-        if "inflation" in cl:
-            topics["inflation trends"] = 0.60
-        return topics or {"general market": 0.50}
+        return _consultant_llm_stub(content)
 
-    messages = [{
-        "role": "user",
-        "content": (
-            "Extract 2-3 descriptive finance topics with scores 0-1. "
-            "Respond ONLY as JSON (no prose, no code fences). Example: "
-            '{"AI chip demand": 0.92, "monetary policy": 0.80}. '
-            f"News: {content}"
-        ),
-    }]
-    resp = with_llm_logging(
-        node_name=f"LG_{LLM_MODEL}_finance_consultant",
-        messages=messages,
-        model=LLM_MODEL,
-        temperature=0.3,
-        call=lambda: _create_chat_completion(
-            messages, model=LLM_MODEL, temperature=0.3, max_tokens=256
-        ),
-        max_tokens=256,
+    system = (
+        "You are a financial consultant extracting high-level topics from news. "
+        "Return ONLY JSON with string keys and scores in [0,1]. Example:\n"
+        '{ "NVIDIA earnings": 0.92, "AI chip demand": 0.88 }'
     )
-    msg = resp.choices[0].message
-    text = msg["content"] if isinstance(msg, dict) else msg.content
-    text = text.strip().strip("`").strip()
-    return json.loads(text)
+    user = f"News text (extract finance topics as JSON):\n{content}"
+    out = _chat_json(system, user)
+    # tolerate either dict or wrapper with 'topics' key
+    if isinstance(out, dict) and "topics" in out and isinstance(out["topics"], dict):
+        return _normalize_topics(out["topics"])
+    if isinstance(out, dict):
+        return _normalize_topics(out)
+    return {}
+
 
 def _supervisor_llm(topics: Dict[str, float], content: str) -> str:
-    """Turn topics into a brief directive."""
     if not USE_REAL_LLM:
-        return "Analyze sector dynamics and macro drivers"
+        return _supervisor_llm_stub(topics, content)
 
-    topics_str = ", ".join([f"{k}: {v:.2f}" for k, v in topics.items()])
-    messages = [{
-        "role": "user",
-        "content": f"Based on topics ({topics_str}), write a brief (<=20 words) investment directive."
-    }]
-    resp = with_llm_logging(
-        node_name=f"LG_{LLM_MODEL}_finance_supervisor",
-        messages=messages,
-        model=LLM_MODEL,
-        temperature=0.2,
-        call=lambda: _create_chat_completion(
-            messages, model=LLM_MODEL, temperature=0.2, max_tokens=128
-        ),
-        max_tokens=128,
+    system = (
+        "You are a portfolio supervisor. Read scored topics and the news, "
+        "and produce ONE concise directive. Reply as JSON: {\"directive\": \"...\"}."
     )
-    msg = resp.choices[0].message
-    return (msg["content"] if isinstance(msg, dict) else msg.content).strip()
+    user = (
+        f"Scored topics (JSON): {json.dumps(topics, ensure_ascii=False)}\n\n"
+        f"News: {content}\n"
+        "Return a JSON object with a single field 'directive'."
+    )
+    out = _chat_json(system, user)
+    if isinstance(out, dict) and isinstance(out.get("directive"), str):
+        return out["directive"].strip()
+    return "Summarize key risks and opportunities."
+
 
 def _worker_llm(directive: str) -> str:
-    """Map directive to an action code."""
     if not USE_REAL_LLM:
-        dl = directive.lower()
-        if "ai" in dl or "semiconductor" in dl:
-            return "SECTOR_ANALYSIS"
-        if "defensive" in dl or "risk" in dl:
-            return "DEFENSIVE_POSITIONING"
-        return "STANDARD_MONITORING"
+        return _worker_llm_stub(directive)
 
-    messages = [{
-        "role": "user",
-        "content": (
-            f"Based on this directive: '{directive}', choose ONE action: "
-            "MONITOR_AI_SECTOR, DEFENSIVE_POSITIONING, SECTOR_ANALYSIS, "
-            "STANDARD_MONITORING, or NO_ACTION"
-        ),
-    }]
-    resp = with_llm_logging(
-        node_name=f"LG_{LLM_MODEL}_finance_worker",
-        messages=messages,
-        model=LLM_MODEL,
-        temperature=0.1,
-        call=lambda: _create_chat_completion(
-            messages, model=LLM_MODEL, temperature=0.1, max_tokens=64
-        ),
-        max_tokens=64,
+    system = (
+        "You are a trading assistant. Map a supervisor directive to a single ACTION code. "
+        "Allowed codes: WATCHLIST, NOTE, SECTOR_ANALYSIS, DURATION_REVIEW, HEDGE, REBALANCE. "
+        "Reply as JSON: {\"action\": \"WATCHLIST\"}."
     )
-    msg = resp.choices[0].message
-    text = (msg["content"] if isinstance(msg, dict) else msg.content).strip()
-    for a in ("MONITOR_AI_SECTOR","DEFENSIVE_POSITIONING","SECTOR_ANALYSIS","STANDARD_MONITORING","NO_ACTION"):
-        if a in text:
-            return a
-    return "STANDARD_MONITORING"
+    user = f"Directive: {directive}\nReturn JSON with key 'action'."
+    out = _chat_json(system, user)
+    action = out.get("action") if isinstance(out, dict) else None
+    if isinstance(action, str) and action.strip():
+        return action.strip().upper()
+    return "NOTE"
 
+
+# ---------- Public API used by the bench
 def process_news_item(news: str) -> Dict[str, Any]:
     """
-    Entry point for batch evals (finance).
-    Returns a dict with topics_extracted (normalized), directive, action_taken, etc.
+    Core pipeline: consultant -> supervisor -> worker.
+    Returns a dict that the bench knows how to read.
     """
     t0 = time.time()
     llm_calls = 0
     try:
-        raw = _consultant_llm(news); llm_calls += 1
-        norm = ftax.normalize_topics(raw)
+        raw = _consultant_llm(news)
+        llm_calls += 0 if not USE_REAL_LLM else 1
+        norm = _normalize_topics(raw)
 
-        directive = _supervisor_llm(norm, news); llm_calls += 1
-        action = _worker_llm(directive); llm_calls += 1
+        directive = _supervisor_llm(norm, news)
+        llm_calls += 0 if not USE_REAL_LLM else 1
 
-        conf = max(norm.values()) if norm else 0.5
-        return {
-            "input_text": news[:100] + "..." if len(news) > 100 else news,
-            "topics_extracted": norm,
+        action = _worker_llm(directive)
+        llm_calls += 0 if not USE_REAL_LLM else 1
+
+        result: Dict[str, Any] = {
+            "input_text": (news[:100] + "...") if len(news) > 100 else news,
+            "topics_scored": norm,
+            "topics_extracted": list(norm.keys()),
             "directive": directive,
             "action_taken": action,
-            "confidence": conf,
+            "confidence": (max(norm.values()) if norm else 0.5),
             "processing_time": time.time() - t0,
             "success": True,
-            "llm_calls": llm_calls,
             "architecture": "LangGraph",
+            "raw": {},
+            "latency_ms": int((time.time() - t0) * 1000),
+            "tokens_total": None,
+            "llm_calls": llm_calls,
+            "n_calls": llm_calls,
+            "calls": llm_calls,
         }
+        return result
+
     except Exception as e:
-        return {
-            "input_text": news[:100] + "..." if len(news) > 100 else news,
-            "topics_extracted": {},
+        result = {
+            "input_text": (news[:100] + "...") if isinstance(news, str) and len(news) > 100 else str(news),
+            "topics_scored": {},
+            "topics_extracted": [],
             "directive": None,
             "action_taken": None,
             "confidence": 0.0,
             "processing_time": time.time() - t0,
             "success": False,
             "error_message": str(e),
-            "llm_calls": llm_calls,
             "architecture": "LangGraph",
+            "raw": {},
+            "latency_ms": int((time.time() - t0) * 1000),
+            "tokens_total": None,
+            "llm_calls": llm_calls,
+            "n_calls": llm_calls,
+            "calls": llm_calls,
         }
+        return result
 
+
+def process_item(item: Any, thread_id: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Public entry point used by the bench. It extracts a plain-text news field
+    from `item` and delegates to `process_news_item(news)`.
+    """
+    news = (
+        (item.get("news") if isinstance(item, dict) else None)
+        or (item.get("text") if isinstance(item, dict) else None)
+        or (
+            " ".join(
+                f for f in [
+                    (item.get("headline") if isinstance(item, dict) else None),
+                    (item.get("summary") if isinstance(item, dict) else None),
+                    (item.get("content") if isinstance(item, dict) else None),
+                ] if f
+            )
+            if isinstance(item, dict) else None
+        )
+        or (str(item) if item is not None else "")
+    )
+    return process_news_item(news)
+
+
+# ---------- Standalone smoke (python -m evaluation.lg_finance_baseline)
 if __name__ == "__main__":
-    sample = "NVIDIA beats on earnings as AI chip demand surges; Fed hints at rate cuts amid cooling inflation."
-    print(json.dumps(process_news_item(sample), indent=2))
+    demo = "NVIDIA beats on earnings as AI chip demand surges; Fed hints at rate cuts amid cooling inflation."
+    out = process_news_item(demo)
+    # best-effort: also emit to a jsonl file if the helper exists
+    _try_log_jsonl("evaluation/runs/finance_lg_smoke.jsonl", out)
+    print(json.dumps(out, ensure_ascii=False, indent=2))
