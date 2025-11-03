@@ -24,6 +24,11 @@ USE_REAL_LLM    = os.environ.get("TB_USE_REAL_LLM", "false").lower() == "true"
 # Optional: OpenAI key (LangChain will also read from env automatically)
 OPENAI_API_KEY  = os.environ.get("OPENAI_API_KEY", "")
 
+# Global accumulators for tracking tokens across multiple LLM calls
+_token_accumulator = 0
+_prompt_token_accumulator = 0
+_completion_token_accumulator = 0
+
 # --------- Optional logging helpers (no-op if package unavailable)
 def _try_log_jsonl(filepath: str, obj: Dict[str, Any]) -> None:
     try:
@@ -80,6 +85,18 @@ def _chat_json(system: str, user: str) -> Dict[str, Any]:
         },
     ]
     resp = llm.invoke(msgs, response_format={"type": "json_object"})
+    
+    # Accumulate token usage
+    global _token_accumulator, _prompt_token_accumulator, _completion_token_accumulator
+    try:
+        usage = getattr(resp, "response_metadata", {}).get("token_usage")
+        if usage:
+            _token_accumulator += usage.get("total_tokens", 0)
+            _prompt_token_accumulator += usage.get("prompt_tokens", 0)
+            _completion_token_accumulator += usage.get("completion_tokens", 0)
+    except Exception:
+        pass  # Best effort, ignore errors
+    
     txt = resp.content if isinstance(resp.content, str) else json.dumps(resp.content)
     return json.loads(txt)
 
@@ -195,6 +212,11 @@ def process_news_item(news: str) -> Dict[str, Any]:
     Core pipeline: consultant -> supervisor -> worker.
     Returns a dict that the bench knows how to read.
     """
+    global _token_accumulator, _prompt_token_accumulator, _completion_token_accumulator
+    _token_accumulator = 0  # Reset token counters for this item
+    _prompt_token_accumulator = 0
+    _completion_token_accumulator = 0
+    
     t0 = time.time()
     llm_calls = 0
     try:
@@ -208,6 +230,9 @@ def process_news_item(news: str) -> Dict[str, Any]:
         action = _worker_llm(directive)
         llm_calls += 0 if not USE_REAL_LLM else 1
 
+        # Get accumulated tokens
+        total_tokens = _token_accumulator if _token_accumulator > 0 else None
+
         result: Dict[str, Any] = {
             "input_text": (news[:100] + "...") if len(news) > 100 else news,
             "topics_scored": norm,
@@ -218,9 +243,13 @@ def process_news_item(news: str) -> Dict[str, Any]:
             "processing_time": time.time() - t0,
             "success": True,
             "architecture": "LangGraph",
-            "raw": {},
+            "raw": {
+                "total_tokens": total_tokens,
+                "prompt_tokens": _prompt_token_accumulator if _prompt_token_accumulator > 0 else None,
+                "completion_tokens": _completion_token_accumulator if _completion_token_accumulator > 0 else None,
+            },
             "latency_ms": int((time.time() - t0) * 1000),
-            "tokens_total": None,
+            "tokens_total": total_tokens,
             "llm_calls": llm_calls,
             "n_calls": llm_calls,
             "calls": llm_calls,
