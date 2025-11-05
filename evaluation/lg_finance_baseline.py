@@ -3,8 +3,35 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import time
 from typing import Any, Dict, List, Optional
+
+# ========================================
+# FLAG: Enable/disable canonical taxonomy
+# Set to False to skip import and use free-form topics (ablation study)
+# ========================================
+ENABLE_CANONICAL_TAXONOMY = True  # ← Change to False to disable
+# ========================================
+
+# Try to import canonical taxonomy from single source of truth (same as TB)
+if ENABLE_CANONICAL_TAXONOMY:
+    try:
+        from evaluation.finance_taxonomy import CANON_TOPICS, normalize_topics
+        USE_CANONICAL_TAXONOMY = True
+        
+    except ImportError:
+        # Fallback: use free-form topics without canonical normalization
+        USE_CANONICAL_TAXONOMY = False
+        CANON_TOPICS = None
+        normalize_topics = None
+        
+else:
+    # Skip import: directly use free-form topics (ablation study)
+    USE_CANONICAL_TAXONOMY = False
+    CANON_TOPICS = None
+    normalize_topics = None
+    
 
 # ---- Config (env-driven, with sensible defaults)
 LG_MODEL        = os.environ.get("TB_LG_MODEL", "gpt-4o-mini")
@@ -28,6 +55,14 @@ OPENAI_API_KEY  = os.environ.get("OPENAI_API_KEY", "")
 _token_accumulator = 0
 _prompt_token_accumulator = 0
 _completion_token_accumulator = 0
+
+# Set taxonomy for constrained prompts (aligned with TB)
+if USE_CANONICAL_TAXONOMY:
+    # Constrained strategy: Use canonical topics in prompts
+    FINANCE_TAXONOMY: List[str] = list(CANON_TOPICS)
+else:
+    # Free strategy: No taxonomy constraints
+    FINANCE_TAXONOMY: List[str] = []
 
 # --------- Optional logging helpers (no-op if package unavailable)
 def _try_log_jsonl(filepath: str, obj: Dict[str, Any]) -> None:
@@ -95,7 +130,7 @@ def _chat_json(system: str, user: str) -> Dict[str, Any]:
             _prompt_token_accumulator += usage.get("prompt_tokens", 0)
             _completion_token_accumulator += usage.get("completion_tokens", 0)
     except Exception:
-        pass  # Best effort, ignore errors
+        pass  
     
     txt = resp.content if isinstance(resp.content, str) else json.dumps(resp.content)
     return json.loads(txt)
@@ -155,18 +190,39 @@ def _consultant_llm(content: str) -> Dict[str, float]:
     if not USE_REAL_LLM:
         return _consultant_llm_stub(content)
 
-    system = (
-        "You are a financial consultant extracting high-level topics from news. "
-        "Return ONLY JSON with string keys and scores in [0,1]. Example:\n"
-        '{ "NVIDIA earnings": 0.92, "AI chip demand": 0.88 }'
-    )
+    # Constrained prompt if canonical taxonomy available
+    if USE_CANONICAL_TAXONOMY and FINANCE_TAXONOMY:
+        system = (
+            "You are a financial consultant extracting high-level topics from news. "
+            f"Output a JSON list of min 3 and max 6 topics ONLY from this taxonomy: {FINANCE_TAXONOMY}. "
+            "Return ONLY JSON with string keys (from taxonomy) and scores in [0,1]. Example:\n"
+            '{ "ai_chip_demand": 0.92, "monetary_policy": 0.88 }'
+        )
+    else:
+        system = (
+            "You are a financial consultant extracting high-level topics from news. "
+            "Return ONLY JSON with string keys and scores in [0,1]. Example:\n"
+            '{ "NVIDIA earnings": 0.92, "AI chip demand": 0.88 }'
+        )
+    
     user = f"News text (extract finance topics as JSON):\n{content}"
     out = _chat_json(system, user)
+    
     # tolerate either dict or wrapper with 'topics' key
     if isinstance(out, dict) and "topics" in out and isinstance(out["topics"], dict):
-        return _normalize_topics(out["topics"])
+        normalized = _normalize_topics(out["topics"])
+        # Apply regex normalization if canonical taxonomy available
+        if USE_CANONICAL_TAXONOMY and normalize_topics:
+            return normalize_topics(normalized)
+        return normalized
+    
     if isinstance(out, dict):
-        return _normalize_topics(out)
+        normalized = _normalize_topics(out)
+        # Apply regex normalization if canonical taxonomy available
+        if USE_CANONICAL_TAXONOMY and normalize_topics:
+            return normalize_topics(normalized)
+        return normalized
+    
     return {}
 
 

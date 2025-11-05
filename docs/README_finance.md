@@ -100,10 +100,11 @@ python -m evaluation.compare_topics --pred evaluation/runs/bench_finance_*.jsonl
 | Metric | TB (1-call) | LG (3-call) | TB Advantage |
 |--------|-------------|-------------|--------------|
 | **LLM Calls** | 1.0 | 3.0 | **3.0x fewer** |
-| **Avg Tokens** | 337 | 931 | **2.8x fewer** |
-| **Avg Latency** | 1,148 ms | 5,049 ms | **4.4x faster** |
-| **Avg Cost** | $0.000060 | $0.000210 | **3.5x cheaper** |
-| **Total Cost** | $0.003 | $0.011 | **3.7x cheaper** |
+| **Avg Tokens** | 338 | 876 | **2.6x fewer** |
+| **Avg Latency** | 1,620 ms | 3,519 ms | **2.2x faster** |
+| **Avg Cost** | $0.000060 | $0.000167 | **2.8x cheaper** |
+| **Total Cost** | $0.003 | $0.008 | **2.8x cheaper** |
+| **Topics/Item** | 3.36 | 2.76 | **+22% more coverage** |
 
 
 

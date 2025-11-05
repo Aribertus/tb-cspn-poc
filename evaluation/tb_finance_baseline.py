@@ -22,15 +22,13 @@ except Exception:
 try:
     from evaluation.finance_taxonomy import CANON_TOPICS, normalize_topics
     USE_CANONICAL_TAXONOMY = True
-    print("[TB Baseline] Using canonical taxonomy (15 topics) with regex normalization", 
-          file=sys.stderr)
+
 except ImportError:
     # Fallback: use hardcoded generic taxonomy (backward compatible)
     USE_CANONICAL_TAXONOMY = False
     CANON_TOPICS = None
     normalize_topics = None
-    print("[TB Baseline] Fallback to generic taxonomy (9 topics) without normalization", 
-          file=sys.stderr)
+
 
 # Deterministic-ish defaults to mirror TB style
 TB_MODEL       = "gpt-4o-mini"
