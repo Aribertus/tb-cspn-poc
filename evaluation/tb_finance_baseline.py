@@ -1,16 +1,34 @@
 # --- Minimal TB finance baseline (deterministic & bench-friendly) ---
 
 from __future__ import annotations
-import json, time
+import json, time, sys
 from typing import Any, Dict, List, Optional
 
 try:
     # Optional: if LangChain & OpenAI are installed, we’ll use them for real calls
     from langchain_openai import ChatOpenAI
-    from langchain.schema import SystemMessage, HumanMessage
+    from langchain_core.messages import SystemMessage, HumanMessage
     LLM_AVAILABLE = True
 except Exception:
-    LLM_AVAILABLE = False
+    try:
+        # Fallback: LangChain legacy import
+        from langchain_openai import ChatOpenAI
+        from langchain.schema import SystemMessage, HumanMessage
+        LLM_AVAILABLE = True
+    except Exception:
+        LLM_AVAILABLE = False
+
+# Try to import canonical taxonomy from single source of truth
+try:
+    from evaluation.finance_taxonomy import CANON_TOPICS, normalize_topics
+    USE_CANONICAL_TAXONOMY = True
+
+except ImportError:
+    # Fallback: use hardcoded generic taxonomy (backward compatible)
+    USE_CANONICAL_TAXONOMY = False
+    CANON_TOPICS = None
+    normalize_topics = None
+
 
 # Deterministic-ish defaults to mirror TB style
 TB_MODEL       = "gpt-4o-mini"
@@ -18,10 +36,16 @@ TB_TEMPERATURE = 0.0
 TB_TOP_P       = 1.0
 TB_SEED: Optional[int] = 1234   # set to None to disable seed
 
-FINANCE_TAXONOMY: List[str] = [
-    "earnings", "mergers_acquisitions", "macroeconomy", "regulation",
-    "markets", "commodities", "technology", "risk", "strategy",
-]
+# Set taxonomy based on import success (aligned with evaluation/finance_taxonomy.py)
+if USE_CANONICAL_TAXONOMY:
+    # Hybrid strategy: Canonical topics in prompt + regex normalization
+    FINANCE_TAXONOMY: List[str] = list(CANON_TOPICS)
+else:
+    # Fallback strategy: Generic topics without normalization
+    FINANCE_TAXONOMY: List[str] = [
+        "earnings", "mergers_acquisitions", "macroeconomy", "regulation",
+        "markets", "commodities", "technology", "risk", "strategy",
+    ]
 
 def _extract_news(item: Any) -> str:
     """Robustly extract a text payload from various item shapes."""
@@ -72,8 +96,18 @@ def process_item_impl(item: Any, thread_id: str | None = None) -> Dict[str, Any]
             topics = json.loads(resp.content)
             if not isinstance(topics, list):
                 topics = []
+            
+            # Apply regex normalization if canonical taxonomy is available (hybrid strategy)
+            if USE_CANONICAL_TAXONOMY and normalize_topics:
+                topics_dict = {t: 1.0 for t in topics if isinstance(t, str)}
+                normalized = normalize_topics(topics_dict)
+                topics = list(normalized.keys())
+            # else: keep topics as-is (fallback strategy)
+            
         except Exception:
-            topics = []
+            # If parsing fails, return raw content as a single-item list for debugging
+            # The bench_finance_tb_lg will clean it up with _clean_topics_list
+            topics = resp.content if isinstance(resp.content, str) else []
 
         # Best-effort usage (langchain-openai may or may not expose it here)
         try:
@@ -102,6 +136,8 @@ def process_item_impl(item: Any, thread_id: str | None = None) -> Dict[str, Any]
         "raw": {"usage": usage} if usage else {},
         "latency_ms": latency_ms,
         "llm_calls": llm_calls,
+        "n_calls": llm_calls,
+        "calls": llm_calls,
         "tokens_total": tokens_total,
     }
 

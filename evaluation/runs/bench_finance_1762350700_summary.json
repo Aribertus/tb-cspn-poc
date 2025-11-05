@@ -1,0 +1,28 @@
+{
+  "LG summary": {
+    "n": 50,
+    "topics_n_avg": 2.76,
+    "directive_rate": 1.0,
+    "action_rate": 1.0,
+    "llm_calls_avg": 3.0,
+    "tokens_avg": 876.1,
+    "latency_avg_ms": 3518.8188939992688,
+    "latency_p50_ms": 3329.613200010499,
+    "latency_p90_ms": 4245.4107999947155,
+    "cost_avg_usd": 0.0001671,
+    "cost_total_usd": 0.008355
+  },
+  "TB summary": {
+    "n": 50,
+    "topics_n_avg": 3.36,
+    "directive_rate": 1.0,
+    "action_rate": 1.0,
+    "llm_calls_avg": 1.0,
+    "tokens_avg": 337.7,
+    "latency_avg_ms": 1619.9541360000148,
+    "latency_p50_ms": 1212.2433999902569,
+    "latency_p90_ms": 2429.1801000072155,
+    "cost_avg_usd": 6.0285e-05,
+    "cost_total_usd": 0.00301425
+  }
+}
